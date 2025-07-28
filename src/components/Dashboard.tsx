@@ -3,6 +3,7 @@ import { TabNavigation, type TabType } from "./TabNavigation";
 import { DataTable } from "./DataTable";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import logoImage from "@/assets/logo.png";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -141,12 +142,15 @@ export function Dashboard({ onLogout }: DashboardProps) {
       {/* Header */}
       <header className="border-b bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className={`text-2xl font-bold bg-gradient-${activeTab} bg-clip-text text-transparent`}>
-                Адмін-панель
-              </h1>
-              <p className="text-muted-foreground">{getTabTitle(activeTab)}</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <img src={logoImage} alt="Logo" className="w-10 h-10" />
+              <div>
+                <h1 className={`text-xl sm:text-2xl font-bold bg-gradient-${activeTab} bg-clip-text text-transparent`}>
+                  DashBoard Suite
+                </h1>
+                <p className="text-sm sm:text-base text-muted-foreground">{getTabTitle(activeTab)}</p>
+              </div>
             </div>
             <Button 
               variant="outline" 
@@ -164,7 +168,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <DataTable 
           theme={activeTab}
           data={data[activeTab]}
