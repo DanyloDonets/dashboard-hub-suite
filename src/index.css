@@ -36,6 +36,49 @@ All colors MUST be HSL.
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
+    /* Orders theme - Blue */
+    --orders-primary: 217 91% 60%;
+    --orders-primary-foreground: 0 0% 100%;
+    --orders-secondary: 217 91% 95%;
+    --orders-accent: 217 91% 85%;
+    --orders-muted: 217 91% 92%;
+
+    /* Inventory theme - Green */
+    --inventory-primary: 142 71% 45%;
+    --inventory-primary-foreground: 0 0% 100%;
+    --inventory-secondary: 142 71% 95%;
+    --inventory-accent: 142 71% 85%;
+    --inventory-muted: 142 71% 92%;
+
+    /* Clients theme - Purple */
+    --clients-primary: 262 83% 58%;
+    --clients-primary-foreground: 0 0% 100%;
+    --clients-secondary: 262 83% 95%;
+    --clients-accent: 262 83% 85%;
+    --clients-muted: 262 83% 92%;
+
+    /* Finance theme - Gold */
+    --finance-primary: 45 93% 47%;
+    --finance-primary-foreground: 0 0% 100%;
+    --finance-secondary: 45 93% 95%;
+    --finance-accent: 45 93% 85%;
+    --finance-muted: 45 93% 92%;
+
+    /* Gradient definitions */
+    --gradient-orders: linear-gradient(135deg, hsl(var(--orders-primary)), hsl(217 91% 70%));
+    --gradient-inventory: linear-gradient(135deg, hsl(var(--inventory-primary)), hsl(142 71% 55%));
+    --gradient-clients: linear-gradient(135deg, hsl(var(--clients-primary)), hsl(262 83% 68%));
+    --gradient-finance: linear-gradient(135deg, hsl(var(--finance-primary)), hsl(45 93% 57%));
+
+    /* Shadows */
+    --shadow-orders: 0 10px 25px -5px hsl(217 91% 60% / 0.3);
+    --shadow-inventory: 0 10px 25px -5px hsl(142 71% 45% / 0.3);
+    --shadow-clients: 0 10px 25px -5px hsl(262 83% 58% / 0.3);
+    --shadow-finance: 0 10px 25px -5px hsl(45 93% 47% / 0.3);
+
+    /* Animation */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;

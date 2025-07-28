@@ -1,0 +1,42 @@
+import { Button } from "@/components/ui/button";
+
+export type TabType = "orders" | "inventory" | "clients" | "finance";
+
+interface TabNavigationProps {
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+}
+
+const tabs = [
+  { id: "orders" as const, label: "Замовлення", theme: "orders" },
+  { id: "inventory" as const, label: "Склад", theme: "inventory" },
+  { id: "clients" as const, label: "Клієнти", theme: "clients" },
+  { id: "finance" as const, label: "Фінанси", theme: "finance" },
+];
+
+export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
+  return (
+    <div className="border-b border-border bg-card">
+      <div className="container mx-auto px-4">
+        <div className="flex space-x-1">
+          {tabs.map((tab) => (
+            <Button
+              key={tab.id}
+              variant={activeTab === tab.id ? "default" : "ghost"}
+              onClick={() => onTabChange(tab.id)}
+              className={`
+                h-12 px-6 rounded-b-none border-b-2 transition-all duration-300
+                ${activeTab === tab.id 
+                  ? `bg-${tab.theme} text-${tab.theme}-foreground border-${tab.theme} shadow-${tab.theme}` 
+                  : `border-transparent hover:bg-${tab.theme}-muted hover:border-${tab.theme}-accent`
+                }
+              `}
+            >
+              {tab.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

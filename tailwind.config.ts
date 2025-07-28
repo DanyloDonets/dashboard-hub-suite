@@ -61,7 +61,47 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				orders: {
+					DEFAULT: 'hsl(var(--orders-primary))',
+					foreground: 'hsl(var(--orders-primary-foreground))',
+					secondary: 'hsl(var(--orders-secondary))',
+					accent: 'hsl(var(--orders-accent))',
+					muted: 'hsl(var(--orders-muted))'
+				},
+				inventory: {
+					DEFAULT: 'hsl(var(--inventory-primary))',
+					foreground: 'hsl(var(--inventory-primary-foreground))',
+					secondary: 'hsl(var(--inventory-secondary))',
+					accent: 'hsl(var(--inventory-accent))',
+					muted: 'hsl(var(--inventory-muted))'
+				},
+				clients: {
+					DEFAULT: 'hsl(var(--clients-primary))',
+					foreground: 'hsl(var(--clients-primary-foreground))',
+					secondary: 'hsl(var(--clients-secondary))',
+					accent: 'hsl(var(--clients-accent))',
+					muted: 'hsl(var(--clients-muted))'
+				},
+				finance: {
+					DEFAULT: 'hsl(var(--finance-primary))',
+					foreground: 'hsl(var(--finance-primary-foreground))',
+					secondary: 'hsl(var(--finance-secondary))',
+					accent: 'hsl(var(--finance-accent))',
+					muted: 'hsl(var(--finance-muted))'
 				}
+			},
+			backgroundImage: {
+				'gradient-orders': 'var(--gradient-orders)',
+				'gradient-inventory': 'var(--gradient-inventory)',
+				'gradient-clients': 'var(--gradient-clients)',
+				'gradient-finance': 'var(--gradient-finance)'
+			},
+			boxShadow: {
+				'orders': 'var(--shadow-orders)',
+				'inventory': 'var(--shadow-inventory)',
+				'clients': 'var(--shadow-clients)',
+				'finance': 'var(--shadow-finance)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
