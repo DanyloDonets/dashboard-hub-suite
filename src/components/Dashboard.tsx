@@ -17,6 +17,35 @@ const initialData = {
       status: "В процесі",
       date: "2024-01-15",
       amount: "1,250 грн",
+      image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop",
+      subOrders: [
+        {
+          id: "1-1",
+          name: "Підзамовлення #001-A",
+          status: "В процесі",
+          date: "2024-01-16",
+          amount: "500 грн",
+          image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop",
+          details: {
+            description: "Частина основного замовлення - комплектуючі",
+            priority: "Високий",
+            assignee: "Петро Сидоров"
+          }
+        },
+        {
+          id: "1-2",
+          name: "Підзамовлення #001-B",
+          status: "Завершено",
+          date: "2024-01-17",
+          amount: "750 грн",
+          image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
+          details: {
+            description: "Доставка та монтаж",
+            priority: "Середній",
+            assignee: "Олена Ткач"
+          }
+        }
+      ],
       details: {
         description: "Замовлення на поставку товарів",
         priority: "Високий",
@@ -29,6 +58,8 @@ const initialData = {
       status: "Завершено",
       date: "2024-01-14",
       amount: "850 грн",
+      image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop",
+      subOrders: [],
       details: {
         description: "Термінове замовлення",
         priority: "Середній",

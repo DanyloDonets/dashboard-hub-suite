@@ -13,6 +13,7 @@ interface DataRow {
   date: string;
   amount?: string;
   image?: string;
+  subOrders?: DataRow[];
   details: {
     description: string;
     priority: string;
@@ -28,6 +29,7 @@ interface DataTableProps {
 
 export function DataTable({ theme, data, onDataChange }: DataTableProps) {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [expandedSubOrder, setExpandedSubOrder] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<DataRow | null>(null);
   const { toast } = useToast();
@@ -40,20 +42,52 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
     }
   };
 
-  const handleDelete = (id: string) => {
-    const newData = data.filter(row => row.id !== id);
-    onDataChange(newData);
+  const handleDelete = (id: string, parentId?: string) => {
+    if (parentId) {
+      // Видалення підзамовлення
+      const newData = data.map(row => {
+        if (row.id === parentId && row.subOrders) {
+          return {
+            ...row,
+            subOrders: row.subOrders.filter(subOrder => subOrder.id !== id)
+          };
+        }
+        return row;
+      });
+      onDataChange(newData);
+    } else {
+      // Видалення основного замовлення
+      const newData = data.filter(row => row.id !== id);
+      onDataChange(newData);
+    }
     toast({
       title: "Видалено",
       description: "Запис успішно видалено",
     });
   };
 
-  const handleComplete = (id: string) => {
-    const newData = data.map(row => 
-      row.id === id ? { ...row, status: "Завершено" } : row
-    );
-    onDataChange(newData);
+  const handleComplete = (id: string, parentId?: string) => {
+    if (parentId) {
+      // Завершення підзамовлення
+      const newData = data.map(row => {
+        if (row.id === parentId && row.subOrders) {
+          return {
+            ...row,
+            subOrders: row.subOrders.map(subOrder => 
+              subOrder.id === id ? { ...subOrder, status: "Завершено" } : subOrder
+            )
+          };
+        }
+        return row;
+      });
+      onDataChange(newData);
+    } else {
+      // Завершення основного замовлення
+      const newData = data.map(row => 
+        row.id === id ? { ...row, status: "Завершено" } : row
+      );
+      onDataChange(newData);
+    }
     toast({
       title: "Завершено",
       description: "Замовлення успішно завершено",
@@ -63,6 +97,37 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
   const addNewRow = () => {
     setEditingRow(null);
     setEditModalOpen(true);
+  };
+
+  const addSubOrder = (parentId: string) => {
+    const newSubOrder: DataRow = {
+      id: `${parentId}-${Date.now()}`,
+      name: `Підзамовлення #${Date.now()}`,
+      status: "В процесі",
+      date: new Date().toISOString().split('T')[0],
+      amount: "0 грн",
+      image: "",
+      details: {
+        description: "Опис підзамовлення",
+        priority: "Середній",
+        assignee: "Не призначено"
+      }
+    };
+
+    const newData = data.map(row => {
+      if (row.id === parentId) {
+        return {
+          ...row,
+          subOrders: [...(row.subOrders || []), newSubOrder]
+        };
+      }
+      return row;
+    });
+    onDataChange(newData);
+    toast({
+      title: "Додано",
+      description: "Підзамовлення успішно додано",
+    });
   };
 
   const handleSaveRow = (updatedRow: DataRow) => {
@@ -77,6 +142,7 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
       const newRow = {
         ...updatedRow,
         id: (Math.max(...data.map(r => parseInt(r.id)), 0) + 1).toString(),
+        subOrders: theme === 'orders' ? [] : undefined,
       };
       onDataChange([...data, newRow]);
     }
@@ -231,7 +297,7 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
                     {expandedRow === row.id && (
                       <tr className={`bg-${theme}-muted/20`}>
                         <td colSpan={(theme === 'orders' || theme === 'finance') ? 6 : 5} className="p-2 md:p-4">
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             <div>
                               <h4 className="font-medium mb-2">Додаткова інформація</h4>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -271,6 +337,139 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
                                 )}
                               </div>
                             </div>
+
+                            {/* Підзамовлення для вкладки "orders" */}
+                            {theme === 'orders' && row.subOrders && row.subOrders.length > 0 && (
+                              <div>
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="font-medium">Підзамовлення ({row.subOrders.length})</h4>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => addSubOrder(row.id)}
+                                    className="gap-1"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    Додати підзамовлення
+                                  </Button>
+                                </div>
+                                <div className="space-y-2">
+                                  {row.subOrders.map((subOrder) => (
+                                    <div key={subOrder.id} className="border rounded-lg">
+                                      <div 
+                                        className={`p-3 cursor-pointer hover:bg-${theme}-muted/20 transition-colors flex items-center justify-between`}
+                                        onClick={() => setExpandedSubOrder(expandedSubOrder === subOrder.id ? null : subOrder.id)}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          {expandedSubOrder === subOrder.id ? 
+                                            <ChevronUp className="w-4 h-4 text-muted-foreground" /> : 
+                                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                          }
+                                          <span className="font-medium">{subOrder.name}</span>
+                                          <span className={`px-2 py-1 rounded-full text-xs ${subOrder.status === 'Завершено' ? `bg-${theme}-accent text-${theme}` : `bg-${theme}-secondary text-${theme}`}`}>
+                                            {subOrder.status}
+                                          </span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleEdit(subOrder.id);
+                                            }}
+                                          >
+                                            <Edit className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDelete(subOrder.id, row.id);
+                                            }}
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleComplete(subOrder.id, row.id);
+                                            }}
+                                          >
+                                            <CheckCircle className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      {expandedSubOrder === subOrder.id && (
+                                        <div className={`border-t bg-${theme}-muted/10 p-3`}>
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                            <div>
+                                              <span className="text-muted-foreground">Опис:</span>
+                                              <p className="mt-1">{subOrder.details.description}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-muted-foreground">Пріоритет:</span>
+                                              <p className="mt-1">{subOrder.details.priority}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-muted-foreground">Відповідальний:</span>
+                                              <p className="mt-1">{subOrder.details.assignee}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-muted-foreground">Дата:</span>
+                                              <p className="mt-1">{subOrder.date}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-muted-foreground">Сума:</span>
+                                              <p className="mt-1">{subOrder.amount}</p>
+                                            </div>
+                                            {subOrder.image && (
+                                              <div>
+                                                <span className="text-muted-foreground">Зображення:</span>
+                                                <div className="mt-1 flex items-center gap-2">
+                                                  <img 
+                                                    src={subOrder.image} 
+                                                    alt="Зображення підзамовлення" 
+                                                    className="w-12 h-12 object-cover rounded cursor-pointer border"
+                                                    onClick={() => openImageInNewTab(subOrder.image!)}
+                                                  />
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => openImageInNewTab(subOrder.image!)}
+                                                  >
+                                                    <ExternalLink className="w-3 h-3" />
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {theme === 'orders' && (!row.subOrders || row.subOrders.length === 0) && (
+                              <div className="text-center py-4 border border-dashed rounded-lg">
+                                <p className="text-muted-foreground mb-2">Немає підзамовлень</p>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => addSubOrder(row.id)}
+                                  className="gap-1"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  Додати підзамовлення
+                                </Button>
+                              </div>
+                            )}
+
                             <div className="flex flex-wrap gap-2 pt-2">
                               <Button 
                                 size="sm" 
