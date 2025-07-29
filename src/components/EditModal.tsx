@@ -28,9 +28,13 @@ interface EditModalProps {
   row: DataRow | null;
   onSave: (updatedRow: DataRow) => void;
   theme: string;
+  isSubOrder?: boolean;
+  materials?: any[];
+  onAddMaterial?: (materialId: string, weight: number) => void;
+  clients?: any[];
 }
 
-export function EditModal({ isOpen, onClose, row, onSave, theme }: EditModalProps) {
+export function EditModal({ isOpen, onClose, row, onSave, theme, isSubOrder = false, materials = [], clients = [] }: EditModalProps) {
   const [formData, setFormData] = useState<DataRow>(
     row || {
       id: "",

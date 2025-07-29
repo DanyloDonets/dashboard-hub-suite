@@ -4,7 +4,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Edit, Trash2, CheckCircle, ChevronDown, ChevronUp, Plus, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { EditModal } from "./EditModal";
+import { MaterialModal, type Material } from "./MaterialModal";
+import { AddMaterialModal } from "./AddMaterialModal";
 import type { TabType } from "./TabNavigation";
+import { logger } from "@/utils/logger";
+
+interface MaterialUsage {
+  materialId: string;
+  weight: number;
+  needed: number;
+  status: "sufficient" | "insufficient";
+}
+
+interface Contact {
+  id: string;
+  type: "phone" | "email";
+  value: string;
+}
 
 interface DataRow {
   id: string;
@@ -13,6 +29,11 @@ interface DataRow {
   date: string;
   amount?: string;
   image?: string;
+  client?: string;
+  weight?: number;
+  unit?: string;
+  contacts?: Contact[];
+  materials?: MaterialUsage[];
   subOrders?: DataRow[];
   details: {
     description: string;
@@ -25,21 +46,40 @@ interface DataTableProps {
   theme: TabType;
   data: DataRow[];
   onDataChange: (data: DataRow[]) => void;
+  materials?: Material[];
+  onMaterialAdd?: (materialId: string, weight: number) => void;
+  clients?: DataRow[];
 }
 
-export function DataTable({ theme, data, onDataChange }: DataTableProps) {
+export function DataTable({ theme, data, onDataChange, materials = [], onMaterialAdd, clients = [] }: DataTableProps) {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedSubOrder, setExpandedSubOrder] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<DataRow | null>(null);
+  const [materialModalOpen, setMaterialModalOpen] = useState(false);
+  const [addMaterialModalOpen, setAddMaterialModalOpen] = useState(false);
+  const [selectedMaterialForAdd, setSelectedMaterialForAdd] = useState<string>("");
+  const [editingSubOrder, setEditingSubOrder] = useState<{ subOrder: DataRow; parentId: string } | null>(null);
   const { toast } = useToast();
 
-  const handleEdit = (id: string) => {
-    const row = data.find(r => r.id === id);
-    if (row) {
-      setEditingRow(row);
-      setEditModalOpen(true);
+  const handleEdit = (id: string, parentId?: string) => {
+    if (parentId) {
+      // Редагування підзамовлення
+      const parentRow = data.find(r => r.id === parentId);
+      const subOrder = parentRow?.subOrders?.find(s => s.id === id);
+      if (subOrder && parentRow) {
+        setEditingSubOrder({ subOrder, parentId });
+        setEditModalOpen(true);
+      }
+    } else {
+      // Редагування основного запису
+      const row = data.find(r => r.id === id);
+      if (row) {
+        setEditingRow(row);
+        setEditModalOpen(true);
+      }
     }
+    logger.log("Відкриття редагування", `Редагування запису ${id}`, "Користувач");
   };
 
   const handleDelete = (id: string, parentId?: string) => {
@@ -60,6 +100,7 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
       const newData = data.filter(row => row.id !== id);
       onDataChange(newData);
     }
+    logger.log("Видалення", `Видалено запис ${id}`, "Користувач");
     toast({
       title: "Видалено",
       description: "Запис успішно видалено",
@@ -88,6 +129,7 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
       );
       onDataChange(newData);
     }
+    logger.log("Завершення", `Завершено замовлення ${id}`, "Користувач");
     toast({
       title: "Завершено",
       description: "Замовлення успішно завершено",
@@ -96,6 +138,7 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
 
   const addNewRow = () => {
     setEditingRow(null);
+    setEditingSubOrder(null);
     setEditModalOpen(true);
   };
 
@@ -131,7 +174,22 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
   };
 
   const handleSaveRow = (updatedRow: DataRow) => {
-    if (editingRow) {
+    if (editingSubOrder) {
+      // Редагування підзамовлення
+      const newData = data.map(row => {
+        if (row.id === editingSubOrder.parentId) {
+          return {
+            ...row,
+            subOrders: row.subOrders?.map(sub => 
+              sub.id === editingSubOrder.subOrder.id ? updatedRow : sub
+            )
+          };
+        }
+        return row;
+      });
+      onDataChange(newData);
+      setEditingSubOrder(null);
+    } else if (editingRow) {
       // Редагування існуючого запису
       const newData = data.map(row => 
         row.id === editingRow.id ? updatedRow : row
@@ -143,8 +201,72 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
         ...updatedRow,
         id: (Math.max(...data.map(r => parseInt(r.id)), 0) + 1).toString(),
         subOrders: theme === 'orders' ? [] : undefined,
+        contacts: theme === 'clients' ? [] : undefined,
       };
       onDataChange([...data, newRow]);
+    }
+    setEditingRow(null);
+  };
+
+  const handleAddMaterial = (materialId: string, weight: number) => {
+    const material = materials.find(m => m.id === materialId);
+    if (!material) return;
+
+    // Перевіряємо чи вистачає матеріалу
+    const isInsufficient = weight > material.weight;
+    
+    if (editingSubOrder) {
+      const newMaterial: MaterialUsage = {
+        materialId,
+        weight,
+        needed: weight,
+        status: isInsufficient ? "insufficient" : "sufficient"
+      };
+
+      const newData = data.map(row => {
+        if (row.id === editingSubOrder.parentId) {
+          return {
+            ...row,
+            subOrders: row.subOrders?.map(sub => {
+              if (sub.id === editingSubOrder.subOrder.id) {
+                return {
+                  ...sub,
+                  materials: [...(sub.materials || []), newMaterial]
+                };
+              }
+              return sub;
+            })
+          };
+        }
+        return row;
+      });
+
+      onDataChange(newData);
+
+      if (isInsufficient) {
+        toast({
+          title: "Попередження",
+          description: `Недостатньо матеріалу! Потрібно ${weight} ${material.unit}, є ${material.weight} ${material.unit}`,
+          variant: "destructive"
+        });
+      } else {
+        // Віднімаємо вагу з складу
+        if (onMaterialAdd) {
+          onMaterialAdd(materialId, -weight);
+        }
+        toast({
+          title: "Додано",
+          description: `Матеріал успішно додано до підзамовлення`,
+        });
+      }
+    }
+    
+    logger.log("Додавання матеріалу", `Додано матеріал ${materialId} (${weight} ${material.unit})`, "Користувач");
+  };
+
+  const handleAddWeight = (materialId: string, weight: number) => {
+    if (onMaterialAdd) {
+      onMaterialAdd(materialId, weight);
     }
   };
 
@@ -185,9 +307,9 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
                   <th className="text-left p-2 md:p-4 font-medium hidden sm:table-cell">Статус</th>
                   <th className="text-left p-2 md:p-4 font-medium hidden md:table-cell">Дата</th>
                   <th className="text-left p-2 md:p-4 font-medium hidden md:table-cell">Сума</th>
-                  {(theme === 'orders' || theme === 'finance') && (
-                    <th className="text-left p-2 md:p-4 font-medium hidden lg:table-cell">Зображення</th>
-                  )}
+                   {theme === 'orders' && (
+                     <th className="text-left p-2 md:p-4 font-medium hidden lg:table-cell">Зображення</th>
+                   )}
                   <th className="text-left p-2 md:p-4 font-medium">Дії</th>
                 </tr>
               </thead>
@@ -230,45 +352,58 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
                       </td>
                       <td className="p-2 md:p-4 text-muted-foreground hidden md:table-cell">{row.date}</td>
                       <td className="p-2 md:p-4 font-medium hidden md:table-cell">{row.amount}</td>
-                      {(theme === 'orders' || theme === 'finance') && (
-                        <td className="p-2 md:p-4 hidden lg:table-cell">
-                          {row.image && (
-                            <div className="flex items-center gap-2">
-                              <img 
-                                src={row.image} 
-                                alt="Зображення" 
-                                className="w-8 h-8 object-cover rounded cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openImageInNewTab(row.image!);
-                                }}
-                              />
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openImageInNewTab(row.image!);
-                                }}
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          )}
-                        </td>
-                      )}
+                       {theme === 'orders' && (
+                         <td className="p-2 md:p-4 hidden lg:table-cell">
+                           {row.image && (
+                             <div className="flex items-center gap-2">
+                               <img 
+                                 src={row.image} 
+                                 alt="Зображення" 
+                                 className="w-8 h-8 object-cover rounded cursor-pointer"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   openImageInNewTab(row.image!);
+                                 }}
+                               />
+                               <Button
+                                 size="sm"
+                                 variant="ghost"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   openImageInNewTab(row.image!);
+                                 }}
+                               >
+                                 <ExternalLink className="w-3 h-3" />
+                               </Button>
+                             </div>
+                           )}
+                         </td>
+                       )}
                       <td className="p-2 md:p-4">
                         <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(row.id);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               handleEdit(row.id);
+                             }}
+                           >
+                             <Edit className="w-4 h-4" />
+                           </Button>
+                           {theme === 'inventory' && (
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 setSelectedMaterialForAdd(row.id);
+                                 setAddMaterialModalOpen(true);
+                               }}
+                             >
+                               <Plus className="w-4 h-4" />
+                             </Button>
+                           )}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -296,7 +431,7 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
                     </tr>
                     {expandedRow === row.id && (
                       <tr className={`bg-${theme}-muted/20`}>
-                        <td colSpan={(theme === 'orders' || theme === 'finance') ? 6 : 5} className="p-2 md:p-4">
+                        <td colSpan={theme === 'orders' ? 6 : 5} className="p-2 md:p-4">
                           <div className="space-y-4">
                             <div>
                               <h4 className="font-medium mb-2">Додаткова інформація</h4>
@@ -313,28 +448,28 @@ export function DataTable({ theme, data, onDataChange }: DataTableProps) {
                                   <span className="text-muted-foreground">Відповідальний:</span>
                                   <p className="mt-1">{row.details.assignee}</p>
                                 </div>
-                                {row.image && (theme === 'orders' || theme === 'finance') && (
-                                  <div className="md:col-span-3">
-                                    <span className="text-muted-foreground">Зображення:</span>
-                                    <div className="mt-2 flex items-center gap-2">
-                                      <img 
-                                        src={row.image} 
-                                        alt="Зображення" 
-                                        className="w-20 h-20 object-cover rounded cursor-pointer border"
-                                        onClick={() => openImageInNewTab(row.image!)}
-                                      />
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => openImageInNewTab(row.image!)}
-                                        className="gap-1"
-                                      >
-                                        <ExternalLink className="w-3 h-3" />
-                                        Відкрити у новій вкладці
-                                      </Button>
-                                    </div>
-                                  </div>
-                                )}
+                                 {row.image && theme === 'orders' && (
+                                   <div className="md:col-span-3">
+                                     <span className="text-muted-foreground">Зображення:</span>
+                                     <div className="mt-2 flex items-center gap-2">
+                                       <img 
+                                         src={row.image} 
+                                         alt="Зображення" 
+                                         className="w-20 h-20 object-cover rounded cursor-pointer border"
+                                         onClick={() => openImageInNewTab(row.image!)}
+                                       />
+                                       <Button
+                                         size="sm"
+                                         variant="outline"
+                                         onClick={() => openImageInNewTab(row.image!)}
+                                         className="gap-1"
+                                       >
+                                         <ExternalLink className="w-3 h-3" />
+                                         Відкрити у новій вкладці
+                                       </Button>
+                                     </div>
+                                   </div>
+                                 )}
                               </div>
                             </div>
 
