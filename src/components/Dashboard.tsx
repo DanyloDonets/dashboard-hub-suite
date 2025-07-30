@@ -29,7 +29,7 @@ const initialData = {
           amount: "500 грн",
           image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop",
           materials: [
-            { materialId: "1", weight: 50, needed: 50, status: "sufficient" as const }
+            { materialId: "1", materialName: "Алюміній", requiredWeight: 50, weight: 50, needed: 50, status: "sufficient" as const }
           ],
           details: {
             description: "Частина основного замовлення - комплектуючі",
@@ -45,7 +45,7 @@ const initialData = {
           amount: "750 грн",
           image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
           materials: [
-            { materialId: "2", weight: 30, needed: 30, status: "sufficient" as const }
+            { materialId: "2", materialName: "Сталь", requiredWeight: 30, weight: 30, needed: 30, status: "sufficient" as const }
           ],
           details: {
             description: "Доставка та монтаж",

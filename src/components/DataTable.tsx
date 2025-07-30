@@ -11,6 +11,8 @@ import { logger } from "@/utils/logger";
 
 interface MaterialUsage {
   materialId: string;
+  materialName: string;
+  requiredWeight: number;
   weight: number;
   needed: number;
   status: "sufficient" | "insufficient";
@@ -216,8 +218,11 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
     const isInsufficient = weight > material.weight;
     
     if (editingSubOrder) {
+      const materialName = materials?.find(m => m.id === materialId)?.name || "";
       const newMaterial: MaterialUsage = {
         materialId,
+        materialName,
+        requiredWeight: weight,
         weight,
         needed: weight,
         status: isInsufficient ? "insufficient" : "sufficient"
