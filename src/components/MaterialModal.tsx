@@ -17,11 +17,11 @@ interface MaterialModalProps {
   isOpen: boolean;
   onClose: () => void;
   materials: Material[];
-  onAddMaterial: (materialId: string, weight: number) => void;
+  onSelect: (materialId: string, weight: number) => void;
   theme: string;
 }
 
-export function MaterialModal({ isOpen, onClose, materials, onAddMaterial, theme }: MaterialModalProps) {
+export function MaterialModal({ isOpen, onClose, materials, onSelect, theme }: MaterialModalProps) {
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [weight, setWeight] = useState("");
   const { toast } = useToast();
@@ -46,7 +46,7 @@ export function MaterialModal({ isOpen, onClose, materials, onAddMaterial, theme
       return;
     }
 
-    onAddMaterial(selectedMaterial, weightNum);
+    onSelect(selectedMaterial, weightNum);
     setSelectedMaterial("");
     setWeight("");
     onClose();

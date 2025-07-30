@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Edit, Trash2, CheckCircle, ChevronDown, ChevronUp, Plus, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { EditModal } from "./EditModal";
+import { SubOrderModal } from "./SubOrderModal";
 import { MaterialModal, type Material } from "./MaterialModal";
 import { AddMaterialModal } from "./AddMaterialModal";
 import type { TabType } from "./TabNavigation";
