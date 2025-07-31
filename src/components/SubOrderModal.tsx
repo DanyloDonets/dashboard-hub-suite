@@ -12,6 +12,9 @@ import { MaterialModal, type Material } from "./MaterialModal";
 interface DataRow {
   id: string;
   name: string;
+  type?: string;
+  quantity?: string;
+  parameters?: string;
   status: string;
   date: string;
   amount?: string;
@@ -39,10 +42,14 @@ interface SubOrderModalProps {
 }
 
 export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials = [], onMaterialAdd }: SubOrderModalProps) {
-  const [formData, setFormData] = useState<DataRow>(
-    row || {
-      id: "",
+  const [formData, setFormData] = useState<DataRow>(() => {
+    if (row) return { ...row };
+    return {
+      id: Date.now().toString(),
       name: "",
+      type: "",
+      quantity: "",
+      parameters: "",
       status: "Активний",
       date: new Date().toLocaleDateString('uk-UA'),
       amount: "",
@@ -53,8 +60,8 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
         priority: "Середній",
         assignee: ""
       }
-    }
-  );
+    };
+  });
   const [materialModalOpen, setMaterialModalOpen] = useState(false);
   const { toast } = useToast();
 
@@ -94,14 +101,8 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
     const material = materials.find(m => m.id === materialId);
     if (!material) return;
 
-    if (material.weight < weight) {
-      toast({
-        title: "Попередження",
-        description: `Недостатньо матеріалу! На складі: ${material.weight} кг, потрібно: ${weight} кг`,
-        variant: "destructive"
-      });
-    }
-
+    const hasEnoughMaterial = material.weight >= weight;
+    
     const newMaterial = {
       materialId,
       materialName: material.name,
@@ -113,9 +114,17 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
       materials: [...(prev.materials || []), newMaterial]
     }));
 
-    // Оновлюємо кількість матеріалу на складі
+    // Списуємо кількість матеріалу зі складу
     if (onMaterialAdd) {
       onMaterialAdd(materialId, -weight);
+    }
+
+    if (!hasEnoughMaterial) {
+      toast({
+        title: "Попередження",
+        description: `Недостатньо матеріалу! На складі було: ${material.weight} кг, потрібно: ${weight} кг. Замовлення створено, але потребує поповнення складу.`,
+        variant: "destructive"
+      });
     }
 
     setMaterialModalOpen(false);
@@ -183,11 +192,32 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
                 />
               </div>
               <div>
-                <Label htmlFor="amount">Сума</Label>
+                <Label htmlFor="type">Вид</Label>
                 <Input
-                  id="amount"
-                  value={formData.amount || ''}
-                  onChange={(e) => handleInputChange('amount', e.target.value)}
+                  id="type"
+                  value={formData.type || ''}
+                  onChange={(e) => handleInputChange('type', e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="quantity">Кількість</Label>
+                <Input
+                  id="quantity"
+                  value={formData.quantity || ''}
+                  onChange={(e) => handleInputChange('quantity', e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="parameters">Параметри</Label>
+                <Input
+                  id="parameters"
+                  value={formData.parameters || ''}
+                  onChange={(e) => handleInputChange('parameters', e.target.value)}
                   className="mt-1"
                 />
               </div>

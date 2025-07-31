@@ -37,16 +37,17 @@ interface EditModalProps {
   theme: string;
   isSubOrder?: boolean;
   materials?: any[];
-  onAddMaterial?: (materialId: string, weight: number) => void;
+  onMaterialAdd?: (materialId: string, weight: number) => void;
   clients?: any[];
 }
 
-export function EditModal({ isOpen, onClose, row, onSave, theme, isSubOrder = false, materials = [], clients = [] }: EditModalProps) {
-  const [formData, setFormData] = useState<DataRow>(
-    row || {
-      id: "",
+export function EditModal({ isOpen, onClose, row, onSave, theme, isSubOrder = false, materials = [], onMaterialAdd, clients = [] }: EditModalProps) {
+  const [formData, setFormData] = useState<DataRow>(() => {
+    if (row) return { ...row };
+    return {
+      id: Date.now().toString(),
       name: "",
-      status: "Активний",
+      status: "Активний", 
       date: new Date().toLocaleDateString('uk-UA'),
       amount: "",
       image: "",
@@ -58,8 +59,8 @@ export function EditModal({ isOpen, onClose, row, onSave, theme, isSubOrder = fa
         priority: "Середній",
         assignee: ""
       }
-    }
-  );
+    };
+  });
   const { toast } = useToast();
 
   const handleInputChange = (field: string, value: string) => {
