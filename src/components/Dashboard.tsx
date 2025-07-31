@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TabNavigation, type TabType } from "./TabNavigation";
 import { DataTable } from "./DataTable";
 import { Button } from "@/components/ui/button";
@@ -142,15 +142,25 @@ const initialData = {
   ]
 };
 
-const materials: Material[] = [
-  { id: "1", name: "Сталь листова", weight: 150, unit: "кг" },
-  { id: "2", name: "Алюміній профільний", weight: 25, unit: "кг" }
-];
+// Синхронізуємо materials з inventory
+const getMaterialsFromInventory = (inventory: any[]) => {
+  return inventory.map(item => ({
+    id: item.id,
+    name: item.name,
+    weight: item.weight || 0,
+    unit: item.unit || 'кг'
+  }));
+};
 
 export function Dashboard({ onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>("orders");
   const [data, setData] = useState(initialData);
-  const [materialsData, setMaterialsData] = useState(materials);
+  const [materialsData, setMaterialsData] = useState(() => getMaterialsFromInventory(initialData.inventory));
+
+  // Синхронізуємо materialsData коли змінюється inventory
+  useEffect(() => {
+    setMaterialsData(getMaterialsFromInventory(data.inventory));
+  }, [data.inventory]);
 
   const handleDataChange = (newData: any[]) => {
     setData(prev => ({
@@ -161,12 +171,28 @@ export function Dashboard({ onLogout }: DashboardProps) {
   };
 
   const handleMaterialAdd = (materialId: string, weight: number) => {
+    // Оновлюємо materialsData для Material[]
     setMaterialsData(prev => prev.map(material => 
       material.id === materialId 
         ? { ...material, weight: material.weight + weight }
         : material
     ));
-    logger.log("Додавання матеріалу", `Додано ${weight} кг матеріалу ${materialId}`, "Користувач");
+    
+    // Оновлюємо data.inventory для DataRow[]
+    setData(prev => ({
+      ...prev,
+      inventory: prev.inventory.map(item => 
+        item.id === materialId 
+          ? { 
+              ...item, 
+              weight: (item.weight || 0) + weight,
+              amount: `${(item.weight || 0) + weight} ${item.unit || 'кг'}`
+            }
+          : item
+      )
+    }));
+    
+    logger.log("Додавання матеріалу", `${weight > 0 ? 'Додано' : 'Списано'} ${Math.abs(weight)} кг матеріалу ${materialId}`, "Користувач");
   };
 
   const getTabTitle = (tab: TabType) => {
