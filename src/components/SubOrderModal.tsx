@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,26 +42,58 @@ interface SubOrderModalProps {
 }
 
 export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials = [], onMaterialAdd }: SubOrderModalProps) {
-  const [formData, setFormData] = useState<DataRow>(() => {
-    if (row) return { ...row };
-    return {
-      id: Date.now().toString(),
-      name: "",
-      type: "",
-      quantity: "",
-      parameters: "",
-      status: "Активний",
-      date: new Date().toLocaleDateString('uk-UA'),
-      amount: "",
-      image: "",
-      materials: [],
-      details: {
-        description: "",
-        priority: "Середній",
-        assignee: ""
-      }
-    };
+  const [formData, setFormData] = useState<DataRow>({
+    id: "",
+    name: "",
+    type: "",
+    quantity: "",
+    parameters: "",
+    status: "Активний",
+    date: new Date().toLocaleDateString('uk-UA'),
+    amount: "",
+    image: "",
+    materials: [],
+    details: {
+      description: "",
+      priority: "Середній",
+      assignee: ""
+    }
   });
+
+  // Підтягуємо дані при відкритті модального вікна
+  useEffect(() => {
+    if (isOpen) {
+      if (row) {
+        setFormData({
+          ...row,
+          materials: row.materials || [],
+          details: {
+            description: row.details?.description || "",
+            priority: row.details?.priority || "Середній",
+            assignee: row.details?.assignee || ""
+          }
+        });
+      } else {
+        setFormData({
+          id: Date.now().toString(),
+          name: "",
+          type: "",
+          quantity: "",
+          parameters: "",
+          status: "Активний",
+          date: new Date().toLocaleDateString('uk-UA'),
+          amount: "",
+          image: "",
+          materials: [],
+          details: {
+            description: "",
+            priority: "Середній",
+            assignee: ""
+          }
+        });
+      }
+    }
+  }, [isOpen, row]);
   const [materialModalOpen, setMaterialModalOpen] = useState(false);
   const { toast } = useToast();
 

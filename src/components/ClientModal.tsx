@@ -4,12 +4,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+interface Contact {
+  id: string;
+  type: "phone" | "email";
+  value: string;
+}
 
 interface Client {
   id: string;
   name: string;
   contactInfo?: string;
+  contacts?: Contact[];
 }
 
 interface ClientModalProps {
@@ -23,7 +31,8 @@ export function ClientModal({ isOpen, onClose, client, onSave }: ClientModalProp
   const [formData, setFormData] = useState<Client>({
     id: "",
     name: "",
-    contactInfo: ""
+    contactInfo: "",
+    contacts: []
   });
   
   const { toast } = useToast();
@@ -34,13 +43,15 @@ export function ClientModal({ isOpen, onClose, client, onSave }: ClientModalProp
       if (client) {
         setFormData({
           ...client,
-          contactInfo: client.contactInfo || ""
+          contactInfo: client.contactInfo || "",
+          contacts: client.contacts || []
         });
       } else {
         setFormData({
           id: Date.now().toString(),
           name: "",
-          contactInfo: ""
+          contactInfo: "",
+          contacts: []
         });
       }
     }
@@ -50,6 +61,34 @@ export function ClientModal({ isOpen, onClose, client, onSave }: ClientModalProp
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  const addContact = () => {
+    const newContact: Contact = {
+      id: Date.now().toString(),
+      type: "phone",
+      value: ""
+    };
+    setFormData(prev => ({
+      ...prev,
+      contacts: [...(prev.contacts || []), newContact]
+    }));
+  };
+
+  const updateContact = (contactIndex: number, field: keyof Contact, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      contacts: (prev.contacts || []).map((contact, index) => 
+        index === contactIndex ? { ...contact, [field]: value } : contact
+      )
+    }));
+  };
+
+  const removeContact = (contactIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      contacts: (prev.contacts || []).filter((_, index) => index !== contactIndex)
     }));
   };
 
@@ -93,14 +132,64 @@ export function ClientModal({ isOpen, onClose, client, onSave }: ClientModalProp
           </div>
 
           <div>
-            <Label htmlFor="contactInfo">Контактна інформація</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Контакти:</Label>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={addContact}
+                className="gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                Додати контакт
+              </Button>
+            </div>
+            
+            {formData.contacts && formData.contacts.length > 0 ? (
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {formData.contacts.map((contact, contactIndex) => (
+                  <div key={contact.id} className="flex items-center gap-2 p-2 border rounded">
+                    <select
+                      value={contact.type}
+                      onChange={(e) => updateContact(contactIndex, 'type', e.target.value)}
+                      className="text-xs border rounded px-2 py-1 bg-background"
+                    >
+                      <option value="phone">Телефон</option>
+                      <option value="email">Email</option>
+                    </select>
+                    <Input
+                      type="text"
+                      value={contact.value}
+                      onChange={(e) => updateContact(contactIndex, 'value', e.target.value)}
+                      className="flex-1 text-sm"
+                      placeholder={contact.type === 'phone' ? '+380...' : 'email@domain.com'}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => removeContact(contactIndex)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Контакти відсутні</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="contactInfo">Додаткова контактна інформація</Label>
             <Textarea
               id="contactInfo"
               value={formData.contactInfo || ''}
               onChange={(e) => handleInputChange('contactInfo', e.target.value)}
               className="mt-1"
-              rows={4}
-              placeholder="Телефон, email, адреса, контактна особа, тощо..."
+              rows={3}
+              placeholder="Адреса, додаткові деталі, тощо..."
             />
           </div>
         </div>

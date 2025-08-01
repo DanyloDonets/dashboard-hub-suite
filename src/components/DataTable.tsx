@@ -115,9 +115,11 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
       onDataChange(newData);
       logger.log("Оновлення", `Оновлено запис ${updatedRow.id}`, "Користувач");
     } else {
-      onDataChange([...data, { ...updatedRow, id: Date.now().toString() }]);
+      const newData = [...data, { ...updatedRow, id: Date.now().toString() }];
+      onDataChange(newData);
       logger.log("Створення", `Створено новий запис ${updatedRow.id}`, "Користувач");
     }
+    setEditingRow(null);
   };
 
   const handleSubOrderSave = (updatedSubOrder: any) => {
@@ -375,9 +377,57 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
         <h4 className="font-medium">{row.name}</h4>
       </div>
       
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <strong className="text-sm">Контакти:</strong>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => addContact(index)}
+            className="gap-1"
+          >
+            <Plus className="w-3 h-3" />
+            Додати контакт
+          </Button>
+        </div>
+        
+        {row.contacts && row.contacts.length > 0 ? (
+          <div className="space-y-2">
+            {row.contacts.map((contact, contactIndex) => (
+              <div key={contact.id} className="flex items-center gap-2 p-2 border rounded">
+                <select
+                  value={contact.type}
+                  onChange={(e) => updateContact(index, contactIndex, 'type', e.target.value)}
+                  className="text-xs border rounded px-2 py-1 bg-background"
+                >
+                  <option value="phone">Телефон</option>
+                  <option value="email">Email</option>
+                </select>
+                <input
+                  type="text"
+                  value={contact.value}
+                  onChange={(e) => updateContact(index, contactIndex, 'value', e.target.value)}
+                  className="flex-1 text-sm border rounded px-2 py-1 bg-background"
+                  placeholder={contact.type === 'phone' ? '+380...' : 'email@domain.com'}
+                />
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => removeContact(index, contactIndex)}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Контакти відсутні</p>
+        )}
+      </div>
+      
       {row.details.description && (
         <div>
-          <strong className="text-sm">Контактна інформація:</strong>
+          <strong className="text-sm">Додаткова інформація:</strong>
           <p className="text-sm mt-1 whitespace-pre-line">{row.details.description}</p>
         </div>
       )}
@@ -507,7 +557,8 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
         client={editingRow ? {
           id: editingRow.id,
           name: editingRow.name,
-          contactInfo: editingRow.details?.description
+          contactInfo: editingRow.details?.description,
+          contacts: editingRow.contacts || []
         } : null}
         onSave={(client) => {
           const updatedRow: DataRow = {
@@ -515,6 +566,7 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
             name: client.name,
             status: "Активний",
             date: new Date().toLocaleDateString('uk-UA'),
+            contacts: client.contacts || [],
             details: {
               description: client.contactInfo || "",
               priority: "Середній"
