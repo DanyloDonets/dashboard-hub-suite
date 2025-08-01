@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,25 +42,55 @@ interface EditModalProps {
 }
 
 export function EditModal({ isOpen, onClose, row, onSave, theme, isSubOrder = false, materials = [], onMaterialAdd, clients = [] }: EditModalProps) {
-  const [formData, setFormData] = useState<DataRow>(() => {
-    if (row) return { ...row };
-    return {
-      id: Date.now().toString(),
-      name: "",
-      status: "Активний", 
-      date: new Date().toLocaleDateString('uk-UA'),
-      amount: "",
-      image: "",
-      clientId: "",
-      subOrders: [],
-      materials: [],
-      details: {
-        description: "",
-        priority: "Середній",
-        assignee: ""
-      }
-    };
+  const [formData, setFormData] = useState<DataRow>({
+    id: "",
+    name: "",
+    status: "Активний", 
+    date: new Date().toLocaleDateString('uk-UA'),
+    amount: "",
+    image: "",
+    clientId: "",
+    subOrders: [],
+    materials: [],
+    details: {
+      description: "",
+      priority: "Середній",
+      assignee: ""
+    }
   });
+
+  // Підтягуємо дані при відкритті модального вікна
+  useEffect(() => {
+    if (isOpen && row) {
+      setFormData({
+        ...row,
+        details: {
+          description: row.details?.description || "",
+          priority: row.details?.priority || "Середній",
+          assignee: row.details?.assignee || ""
+        },
+        subOrders: row.subOrders || [],
+        materials: row.materials || []
+      });
+    } else if (isOpen && !row) {
+      setFormData({
+        id: Date.now().toString(),
+        name: "",
+        status: "Активний", 
+        date: new Date().toLocaleDateString('uk-UA'),
+        amount: "",
+        image: "",
+        clientId: "",
+        subOrders: [],
+        materials: [],
+        details: {
+          description: "",
+          priority: "Середній",
+          assignee: ""
+        }
+      });
+    }
+  }, [isOpen, row]);
   const { toast } = useToast();
 
   const handleInputChange = (field: string, value: string) => {
@@ -246,20 +276,6 @@ export function EditModal({ isOpen, onClose, row, onSave, theme, isSubOrder = fa
                   <SelectItem value="В процесі">В процесі</SelectItem>
                   <SelectItem value="Завершено">Завершено</SelectItem>
                   <SelectItem value="Призупинено">Призупинено</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="priority">Пріоритет</Label>
-              <Select value={formData.details.priority} onValueChange={(value) => handleInputChange('details.priority', value)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Низький">Низький</SelectItem>
-                  <SelectItem value="Середній">Середній</SelectItem>
-                  <SelectItem value="Високий">Високий</SelectItem>
-                  <SelectItem value="Критичний">Критичний</SelectItem>
                 </SelectContent>
               </Select>
             </div>

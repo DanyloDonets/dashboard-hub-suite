@@ -7,6 +7,8 @@ import { EditModal } from "./EditModal";
 import { NewOrderModal } from "./NewOrderModal";
 import { SubOrderModal } from "./SubOrderModal";
 import { AddMaterialModal } from "./AddMaterialModal";
+import { InventoryModal } from "./InventoryModal";
+import { ClientModal } from "./ClientModal";
 import type { TabType } from "./TabNavigation";
 import { logger } from "@/utils/logger";
 
@@ -55,6 +57,8 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
   const [isSubOrderModalOpen, setIsSubOrderModalOpen] = useState(false);
+  const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string>("");
   const [editingSubOrder, setEditingSubOrder] = useState<any>(null);
   const [expandedSubOrder, setExpandedSubOrder] = useState<string | null>(null);
@@ -65,6 +69,12 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
   const handleAdd = () => {
     if (theme === "orders") {
       setIsNewOrderModalOpen(true);
+    } else if (theme === "inventory") {
+      setEditingRow(null);
+      setIsInventoryModalOpen(true);
+    } else if (theme === "clients") {
+      setEditingRow(null);
+      setIsClientModalOpen(true);
     } else {
       setEditingRow(null);
       setIsModalOpen(true);
@@ -73,7 +83,13 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
 
   const handleEdit = (row: DataRow) => {
     setEditingRow(row);
-    setIsModalOpen(true);
+    if (theme === "inventory") {
+      setIsInventoryModalOpen(true);
+    } else if (theme === "clients") {
+      setIsClientModalOpen(true);
+    } else {
+      setIsModalOpen(true);
+    }
     logger.log("Відкриття редагування", `Редагування запису ${row.id}`, "Користувач");
   };
 
@@ -331,8 +347,8 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
       <div className="flex items-center justify-between">
         <div>
           <h4 className="font-medium">{row.name}</h4>
-          <p className="text-sm text-muted-foreground">{row.amount}</p>
-          <p className="text-xs text-muted-foreground">Статус: {row.status}</p>
+          <p className="text-sm text-muted-foreground">Кількість: {row.weight || 0} {row.unit || 'кг'}</p>
+          <p className="text-xs text-muted-foreground">Останнє оновлення: {row.date}</p>
         </div>
         <Button
           size="sm"
@@ -345,7 +361,10 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
         </Button>
       </div>
       {row.details.description && (
-        <p className="text-sm">{row.details.description}</p>
+        <div>
+          <strong className="text-sm">Характеристики:</strong>
+          <p className="text-sm">{row.details.description}</p>
+        </div>
       )}
     </div>
   );
@@ -354,62 +373,12 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
     <div className="space-y-3">
       <div>
         <h4 className="font-medium">{row.name}</h4>
-        <p className="text-sm text-muted-foreground">Статус: {row.status}</p>
-        {row.amount && <p className="text-sm text-muted-foreground">Оборот: {row.amount}</p>}
-      </div>
-      
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <strong className="text-sm">Контакти:</strong>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => addContact(index)}
-            className="gap-1"
-          >
-            <Plus className="w-3 h-3" />
-            Додати контакт
-          </Button>
-        </div>
-        
-        {row.contacts && row.contacts.length > 0 ? (
-          <div className="space-y-2">
-            {row.contacts.map((contact, contactIndex) => (
-              <div key={contact.id} className="flex items-center gap-2 p-2 border rounded">
-                <select
-                  value={contact.type}
-                  onChange={(e) => updateContact(index, contactIndex, 'type', e.target.value)}
-                  className="text-xs border rounded px-2 py-1"
-                >
-                  <option value="phone">Телефон</option>
-                  <option value="email">Email</option>
-                </select>
-                <input
-                  type="text"
-                  value={contact.value}
-                  onChange={(e) => updateContact(index, contactIndex, 'value', e.target.value)}
-                  className="flex-1 text-sm border rounded px-2 py-1"
-                  placeholder={contact.type === 'phone' ? '+380...' : 'email@domain.com'}
-                />
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => removeContact(index, contactIndex)}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Контакти відсутні</p>
-        )}
       </div>
       
       {row.details.description && (
         <div>
-          <strong className="text-sm">Опис:</strong>
-          <p className="text-sm mt-1">{row.details.description}</p>
+          <strong className="text-sm">Контактна інформація:</strong>
+          <p className="text-sm mt-1 whitespace-pre-line">{row.details.description}</p>
         </div>
       )}
     </div>
@@ -501,6 +470,58 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
         materials={materials}
         onMaterialAdd={onMaterialAdd}
         clients={clients}
+      />
+
+      <InventoryModal
+        isOpen={isInventoryModalOpen}
+        onClose={() => setIsInventoryModalOpen(false)}
+        item={editingRow ? {
+          id: editingRow.id,
+          name: editingRow.name,
+          weight: editingRow.weight,
+          unit: editingRow.unit,
+          characteristics: editingRow.details?.description,
+          lastUpdated: editingRow.date
+        } : null}
+        onSave={(item) => {
+          const updatedRow: DataRow = {
+            id: item.id,
+            name: item.name,
+            status: "Активний",
+            date: item.lastUpdated || new Date().toISOString().split('T')[0],
+            weight: item.weight,
+            unit: item.unit,
+            amount: `${item.weight || 0} ${item.unit || 'кг'}`,
+            details: {
+              description: item.characteristics || "",
+              priority: "Середній"
+            }
+          };
+          handleSave(updatedRow);
+        }}
+      />
+
+      <ClientModal
+        isOpen={isClientModalOpen}
+        onClose={() => setIsClientModalOpen(false)}
+        client={editingRow ? {
+          id: editingRow.id,
+          name: editingRow.name,
+          contactInfo: editingRow.details?.description
+        } : null}
+        onSave={(client) => {
+          const updatedRow: DataRow = {
+            id: client.id,
+            name: client.name,
+            status: "Активний",
+            date: new Date().toLocaleDateString('uk-UA'),
+            details: {
+              description: client.contactInfo || "",
+              priority: "Середній"
+            }
+          };
+          handleSave(updatedRow);
+        }}
       />
 
       <NewOrderModal
