@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Trash2, Download } from "lucide-react";
 import { logger, type LogEntry } from "@/utils/logger";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LogsTabProps {
   theme: string;
@@ -15,25 +16,56 @@ export function LogsTab({ theme }: LogsTabProps) {
 
   useEffect(() => {
     // Завантажуємо логи при ініціалізації
-    const loadLogs = () => {
-      const allLogs = logger.getLogs();
-      setLogs(allLogs.reverse()); // Показуємо найновіші спочатку
+    const loadLogs = async () => {
+      try {
+        // Завантажуємо з бази даних
+        const { data: dbLogs, error } = await (supabase as any).from('logs').select('*').order('created_at', { ascending: false });
+        
+        if (!error && dbLogs) {
+          const transformedLogs = dbLogs.map((log: any) => ({
+            timestamp: log.created_at,
+            action: log.action,
+            details: log.details,
+            user: "Користувач"
+          }));
+          setLogs(transformedLogs);
+        }
+        
+        // Також додаємо локальні логи
+        const localLogs = logger.getLogs();
+        if (localLogs.length > 0) {
+          setLogs(prev => [...localLogs.reverse(), ...prev]);
+        }
+      } catch (error) {
+        console.error('Помилка завантаження логів:', error);
+        // Fallback до локальних логів
+        const allLogs = logger.getLogs();
+        setLogs(allLogs.reverse());
+      }
     };
 
     loadLogs();
     
-    // Оновлюємо логи кожні 2 секунди
-    const interval = setInterval(loadLogs, 2000);
+    // Оновлюємо логи кожні 5 секунд
+    const interval = setInterval(loadLogs, 5000);
     
     return () => clearInterval(interval);
   }, []);
 
-  const clearLogs = () => {
-    // Очищуємо логи з localStorage
-    const today = new Date().toISOString().split('T')[0];
-    const filename = `logs_${today}.txt`;
-    localStorage.removeItem(filename);
-    setLogs([]);
+  const clearLogs = async () => {
+    try {
+      // Очищуємо логи з бази даних
+      await (supabase as any).from('logs').delete().gte('id', 0);
+      
+      // Очищуємо логи з localStorage
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `logs_${today}.txt`;
+      localStorage.removeItem(filename);
+      
+      setLogs([]);
+    } catch (error) {
+      console.error('Помилка очищення логів:', error);
+    }
   };
 
   const downloadLogs = () => {

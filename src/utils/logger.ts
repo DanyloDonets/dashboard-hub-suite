@@ -20,19 +20,28 @@ class Logger {
     this.saveToFile(entry);
   }
 
-  private saveToFile(entry: LogEntry) {
+  private async saveToFile(entry: LogEntry) {
     const today = new Date().toISOString().split('T')[0];
     const filename = `logs_${today}.txt`;
     
     const logLine = `[${entry.timestamp}] ${entry.user} - ${entry.action}: ${entry.details}\n`;
     
-    // В реальному застосунку тут був би API запит на сервер
-    // Зараз просто виводимо в консоль
-    console.log(`LOG -> ${filename}: ${logLine.trim()}`);
-    
-    // Можна також зберігати в localStorage для демонстрації
+    // Зберігаємо в localStorage для txt файлу
     const existingLogs = localStorage.getItem(filename) || "";
     localStorage.setItem(filename, existingLogs + logLine);
+    
+    // Зберігаємо в базу даних
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      await (supabase as any).from('logs').insert({
+        action: entry.action,
+        details: entry.details
+      });
+    } catch (error) {
+      console.error('Помилка збереження логу в БД:', error);
+    }
+    
+    console.log(`LOG -> ${filename}: ${logLine.trim()}`);
   }
 
   getLogs(): LogEntry[] {

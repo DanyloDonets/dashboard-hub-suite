@@ -50,9 +50,13 @@ interface DataTableProps {
   materials?: any[];
   onMaterialAdd?: (materialId: string, weight: number) => void;
   clients?: any[];
+  saveOrder?: (order: any) => Promise<void>;
+  saveInventory?: (item: any) => Promise<void>;
+  saveClient?: (client: any) => Promise<void>;
+  deleteRecord?: (id: string, table: string) => Promise<void>;
 }
 
-export function DataTable({ theme, data, onDataChange, materials = [], onMaterialAdd, clients = [] }: DataTableProps) {
+export function DataTable({ theme, data, onDataChange, materials = [], onMaterialAdd, clients = [], saveOrder, saveInventory, saveClient, deleteRecord }: DataTableProps) {
   const [editingRow, setEditingRow] = useState<DataRow | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
@@ -99,14 +103,26 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
     logger.log("Відкриття редагування підзамовлення", `Редагування підзамовлення ${subOrder.id}`, "Користувач");
   };
 
-  const handleDelete = (index: number) => {
-    const newData = data.filter((_, i) => i !== index);
-    onDataChange(newData);
-    logger.log("Видалення", `Видалено запис ${data[index].id}`, "Користувач");
-    toast({
-      title: "Видалено",
-      description: "Запис успішно видалено"
-    });
+  const handleDelete = async (index: number) => {
+    if (!deleteRecord) return;
+    
+    const row = data[index];
+    const tableName = theme === 'orders' ? 'orders' : theme === 'inventory' ? 'inventory' : 'clients';
+    
+    try {
+      await deleteRecord(row.id, tableName);
+      logger.log("Видалення", `Видалено запис ${row.id}`, "Користувач");
+      toast({
+        title: "Видалено",
+        description: "Запис успішно видалено"
+      });
+    } catch (error) {
+      toast({
+        title: "Помилка",
+        description: "Не вдалося видалити запис",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSave = (updatedRow: DataRow) => {
@@ -533,21 +549,30 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
           characteristics: editingRow.details?.description,
           lastUpdated: editingRow.date
         } : null}
-        onSave={(item) => {
-          const updatedRow: DataRow = {
-            id: item.id,
-            name: item.name,
-            status: "Активний",
-            date: item.lastUpdated || new Date().toISOString().split('T')[0],
-            weight: item.weight,
-            unit: item.unit,
-            amount: `${item.weight || 0} ${item.unit || 'кг'}`,
-            details: {
-              description: item.characteristics || "",
-              priority: "Середній"
-            }
-          };
-          handleSave(updatedRow);
+        onSave={async (item) => {
+          if (!saveInventory) return;
+          
+          try {
+            await saveInventory({
+              id: item.id === 'new' ? undefined : item.id,
+              name: item.name,
+              weight: item.weight,
+              unit: item.unit,
+              imageUrl: item.characteristics
+            });
+            setIsInventoryModalOpen(false);
+            setEditingRow(null);
+            toast({
+              title: "Збережено",
+              description: "Матеріал успішно збережено"
+            });
+          } catch (error) {
+            toast({
+              title: "Помилка",
+              description: "Не вдалося зберегти матеріал",
+              variant: "destructive"
+            });
+          }
         }}
       />
 
@@ -560,26 +585,58 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
           contactInfo: editingRow.details?.description,
           contacts: editingRow.contacts || []
         } : null}
-        onSave={(client) => {
-          const updatedRow: DataRow = {
-            id: client.id,
-            name: client.name,
-            status: "Активний",
-            date: new Date().toLocaleDateString('uk-UA'),
-            contacts: client.contacts || [],
-            details: {
-              description: client.contactInfo || "",
-              priority: "Середній"
-            }
-          };
-          handleSave(updatedRow);
+        onSave={async (client) => {
+          if (!saveClient) return;
+          
+          try {
+            await saveClient({
+              id: client.id === 'new' ? undefined : client.id,
+              name: client.name,
+              contacts: client.contacts
+            });
+            setIsClientModalOpen(false);
+            setEditingRow(null);
+            toast({
+              title: "Збережено",
+              description: "Клієнт успішно збережений"
+            });
+          } catch (error) {
+            toast({
+              title: "Помилка",
+              description: "Не вдалося зберегти клієнта",
+              variant: "destructive"
+            });
+          }
         }}
       />
 
       <NewOrderModal
         isOpen={isNewOrderModalOpen}
         onClose={() => setIsNewOrderModalOpen(false)}
-        onSave={handleSave}
+        onSave={async (orderData) => {
+          if (!saveOrder) return;
+          
+          try {
+            await saveOrder({
+              name: orderData.name,
+              status: orderData.status,
+              priority: orderData.details?.priority || 'Середній',
+              deliveryDate: orderData.deliveryDate,
+              notes: orderData.details?.description
+            });
+            setIsNewOrderModalOpen(false);
+            toast({
+              title: "Збережено",
+              description: "Замовлення успішно створено"
+            });
+          } catch (error) {
+            toast({
+              title: "Помилка",
+              description: "Не вдалося створити замовлення",
+              variant: "destructive"
+            });
+          }
+        }}
         theme={theme}
         materials={materials}
         onMaterialAdd={onMaterialAdd}
