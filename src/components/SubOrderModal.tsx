@@ -255,35 +255,19 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="status">Статус</Label>
-                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Активний">Активний</SelectItem>
-                    <SelectItem value="В процесі">В процесі</SelectItem>
-                    <SelectItem value="Завершено">Завершено</SelectItem>
-                    <SelectItem value="Призупинено">Призупинено</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="priority">Пріоритет</Label>
-                <Select value={formData.details.priority} onValueChange={(value) => handleInputChange('details.priority', value)}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Низький">Низький</SelectItem>
-                    <SelectItem value="Середній">Середній</SelectItem>
-                    <SelectItem value="Високий">Високий</SelectItem>
-                    <SelectItem value="Критичний">Критичний</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="status">Статус</Label>
+              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Активний">Активний</SelectItem>
+                  <SelectItem value="В процесі">В процесі</SelectItem>
+                  <SelectItem value="Завершено">Завершено</SelectItem>
+                  <SelectItem value="Призупинено">Призупинено</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

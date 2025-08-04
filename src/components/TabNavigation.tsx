@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 
-export type TabType = "orders" | "inventory" | "clients";
+export type TabType = "orders" | "inventory" | "clients" | "logs";
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -11,6 +11,7 @@ const tabs = [
   { id: "orders" as const, label: "Замовлення", theme: "orders" },
   { id: "inventory" as const, label: "Склад", theme: "inventory" },
   { id: "clients" as const, label: "Клієнти", theme: "clients" },
+  { id: "logs" as const, label: "Логи", theme: "logs" },
 ];
 
 export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {

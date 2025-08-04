@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { TabNavigation, type TabType } from "./TabNavigation";
 import { DataTable } from "./DataTable";
+import { LogsTab } from "./LogsTab";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import logoImage from "@/assets/logo.png";
@@ -199,7 +200,8 @@ export function Dashboard({ onLogout }: DashboardProps) {
     const titles = {
       orders: "Управління замовленнями",
       inventory: "Управління складом",
-      clients: "Управління клієнтами"
+      clients: "Управління клієнтами",
+      logs: "Журнал операцій"
     };
     return titles[tab];
   };
@@ -236,14 +238,18 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
       {/* Main Content */}
       <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        <DataTable 
-          theme={activeTab}
-          data={data[activeTab]}
-          onDataChange={handleDataChange}
-          materials={materialsData}
-          onMaterialAdd={handleMaterialAdd}
-          clients={data.clients}
-        />
+        {activeTab === "logs" ? (
+          <LogsTab theme={activeTab} />
+        ) : (
+          <DataTable 
+            theme={activeTab}
+            data={data[activeTab]}
+            onDataChange={handleDataChange}
+            materials={materialsData}
+            onMaterialAdd={handleMaterialAdd}
+            clients={data.clients}
+          />
+        )}
       </main>
     </div>
   );

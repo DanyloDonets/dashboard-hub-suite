@@ -89,19 +89,28 @@ export default {
 					secondary: 'hsl(var(--finance-secondary))',
 					accent: 'hsl(var(--finance-accent))',
 					muted: 'hsl(var(--finance-muted))'
+				},
+				logs: {
+					DEFAULT: 'hsl(var(--logs-primary))',
+					foreground: 'hsl(var(--logs-primary-foreground))',
+					secondary: 'hsl(var(--logs-secondary))',
+					accent: 'hsl(var(--logs-accent))',
+					muted: 'hsl(var(--logs-muted))'
 				}
 			},
 			backgroundImage: {
 				'gradient-orders': 'var(--gradient-orders)',
 				'gradient-inventory': 'var(--gradient-inventory)',
 				'gradient-clients': 'var(--gradient-clients)',
-				'gradient-finance': 'var(--gradient-finance)'
+				'gradient-finance': 'var(--gradient-finance)',
+				'gradient-logs': 'var(--gradient-logs)'
 			},
 			boxShadow: {
 				'orders': 'var(--shadow-orders)',
 				'inventory': 'var(--shadow-inventory)',
 				'clients': 'var(--shadow-clients)',
-				'finance': 'var(--shadow-finance)'
+				'finance': 'var(--shadow-finance)',
+				'logs': 'var(--shadow-logs)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
