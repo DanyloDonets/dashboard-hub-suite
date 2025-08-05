@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 export const useSupabaseData = () => {
   const [data, setData] = useState({
@@ -46,31 +47,45 @@ export const useSupabaseData = () => {
       // Перевіряємо чи це новий запис
       const isNewOrder = !order.id || order.id === 'new' || typeof order.id === 'number' || /^\d+$/.test(order.id);
       
+      // Валідуємо дату доставки
+      let deliveryDate = null;
+      if (order.deliveryDate && order.deliveryDate !== '-' && order.deliveryDate.trim() !== '') {
+        try {
+          deliveryDate = new Date(order.deliveryDate).toISOString();
+        } catch (dateError) {
+          console.warn('Неправильний формат дати доставки:', order.deliveryDate);
+          deliveryDate = null;
+        }
+      }
+      
       if (isNewOrder) {
         const { error } = await (supabase as any).from('orders').insert({
           name: order.name,
           status: order.status,
           priority: order.priority,
-          delivery_date: order.deliveryDate,
+          delivery_date: deliveryDate,
           notes: order.notes
         });
         
         if (error) throw error;
+        logger.log('Створення замовлення', `Створено замовлення "${order.name}"`, 'Користувач');
       } else {
         const { error } = await (supabase as any).from('orders').update({
           name: order.name,
           status: order.status,
           priority: order.priority,
-          delivery_date: order.deliveryDate,
+          delivery_date: deliveryDate,
           notes: order.notes,
           updated_at: new Date().toISOString()
         }).eq('id', order.id);
         
         if (error) throw error;
+        logger.log('Оновлення замовлення', `Оновлено замовлення "${order.name}"`, 'Користувач');
       }
       await loadData();
     } catch (error) {
       console.error('Помилка збереження замовлення:', error);
+      logger.log('Помилка', `Помилка збереження замовлення: ${error.message}`, 'Система');
       throw error;
     }
   };
@@ -89,6 +104,7 @@ export const useSupabaseData = () => {
         });
         
         if (error) throw error;
+        logger.log('Створення матеріалу', `Додано матеріал "${item.name}" (${item.weight} ${item.unit})`, 'Користувач');
       } else {
         const { error } = await (supabase as any).from('inventory').update({
           name: item.name,
@@ -99,10 +115,12 @@ export const useSupabaseData = () => {
         }).eq('id', item.id);
         
         if (error) throw error;
+        logger.log('Оновлення матеріалу', `Оновлено матеріал "${item.name}" (${item.weight} ${item.unit})`, 'Користувач');
       }
       await loadData();
     } catch (error) {
       console.error('Помилка збереження матеріалу:', error);
+      logger.log('Помилка', `Помилка збереження матеріалу: ${error.message}`, 'Система');
       throw error;
     }
   };
@@ -121,6 +139,7 @@ export const useSupabaseData = () => {
         
         if (error) throw error;
         clientId = newClient.id;
+        logger.log('Створення клієнта', `Додано клієнта "${client.name}"`, 'Користувач');
       } else {
         const { error } = await (supabase as any).from('clients').update({
           name: client.name,
@@ -128,6 +147,7 @@ export const useSupabaseData = () => {
         }).eq('id', client.id);
         
         if (error) throw error;
+        logger.log('Оновлення клієнта', `Оновлено клієнта "${client.name}"`, 'Користувач');
       }
 
       // Оновлюємо контакти
@@ -155,6 +175,7 @@ export const useSupabaseData = () => {
       await loadData();
     } catch (error) {
       console.error('Помилка збереження клієнта:', error);
+      logger.log('Помилка', `Помилка збереження клієнта: ${error.message}`, 'Система');
       throw error;
     }
   };
@@ -163,9 +184,11 @@ export const useSupabaseData = () => {
     try {
       const { error } = await (supabase as any).from(table).delete().eq('id', id);
       if (error) throw error;
+      logger.log('Видалення', `Видалено запис з таблиці ${table}`, 'Користувач');
       await loadData();
     } catch (error) {
       console.error('Помилка видалення запису:', error);
+      logger.log('Помилка', `Помилка видалення з ${table}: ${error.message}`, 'Система');
       throw error;
     }
   };
