@@ -14,7 +14,226 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      client_contacts: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          type: string
+          value: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          type: string
+          value: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          type?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          unit: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          unit?: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          unit?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          created_at: string
+          delivery_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          priority: string
+          status: string
+          total_weight: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          priority?: string
+          status?: string
+          total_weight?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          priority?: string
+          status?: string
+          total_weight?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sub_order_materials: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_id: string
+          sub_order_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_id: string
+          sub_order_id: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_id?: string
+          sub_order_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_order_materials_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_order_materials_sub_order_id_fkey"
+            columns: ["sub_order_id"]
+            isOneToOne: false
+            referencedRelation: "sub_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sub_orders: {
+        Row: {
+          created_at: string
+          delivery_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          order_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          order_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          order_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
