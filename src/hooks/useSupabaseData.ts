@@ -43,7 +43,20 @@ export const useSupabaseData = () => {
 
   const saveOrder = async (order: any) => {
     try {
-      if (order.id && order.id !== 'new') {
+      // Перевіряємо чи це новий запис
+      const isNewOrder = !order.id || order.id === 'new' || typeof order.id === 'number' || /^\d+$/.test(order.id);
+      
+      if (isNewOrder) {
+        const { error } = await (supabase as any).from('orders').insert({
+          name: order.name,
+          status: order.status,
+          priority: order.priority,
+          delivery_date: order.deliveryDate,
+          notes: order.notes
+        });
+        
+        if (error) throw error;
+      } else {
         const { error } = await (supabase as any).from('orders').update({
           name: order.name,
           status: order.status,
@@ -52,16 +65,6 @@ export const useSupabaseData = () => {
           notes: order.notes,
           updated_at: new Date().toISOString()
         }).eq('id', order.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await (supabase as any).from('orders').insert({
-          name: order.name,
-          status: order.status,
-          priority: order.priority,
-          delivery_date: order.deliveryDate,
-          notes: order.notes
-        });
         
         if (error) throw error;
       }
@@ -74,7 +77,19 @@ export const useSupabaseData = () => {
 
   const saveInventory = async (item: any) => {
     try {
-      if (item.id && item.id !== 'new') {
+      // Перевіряємо чи це новий запис
+      const isNewItem = !item.id || item.id === 'new' || typeof item.id === 'number' || /^\d+$/.test(item.id);
+      
+      if (isNewItem) {
+        const { error } = await (supabase as any).from('inventory').insert({
+          name: item.name,
+          weight: parseFloat(item.weight || '0'),
+          unit: item.unit,
+          image_url: item.imageUrl
+        });
+        
+        if (error) throw error;
+      } else {
         const { error } = await (supabase as any).from('inventory').update({
           name: item.name,
           weight: parseFloat(item.weight || '0'),
@@ -82,15 +97,6 @@ export const useSupabaseData = () => {
           image_url: item.imageUrl,
           updated_at: new Date().toISOString()
         }).eq('id', item.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await (supabase as any).from('inventory').insert({
-          name: item.name,
-          weight: parseFloat(item.weight || '0'),
-          unit: item.unit,
-          image_url: item.imageUrl
-        });
         
         if (error) throw error;
       }
@@ -105,20 +111,23 @@ export const useSupabaseData = () => {
     try {
       let clientId = client.id;
       
-      if (client.id && client.id !== 'new') {
-        const { error } = await (supabase as any).from('clients').update({
-          name: client.name,
-          updated_at: new Date().toISOString()
-        }).eq('id', client.id);
-        
-        if (error) throw error;
-      } else {
+      // Перевіряємо чи це новий клієнт (id це timestamp або 'new')
+      const isNewClient = !client.id || client.id === 'new' || typeof client.id === 'number' || /^\d+$/.test(client.id);
+      
+      if (isNewClient) {
         const { data: newClient, error } = await (supabase as any).from('clients').insert({
           name: client.name
         }).select().single();
         
         if (error) throw error;
         clientId = newClient.id;
+      } else {
+        const { error } = await (supabase as any).from('clients').update({
+          name: client.name,
+          updated_at: new Date().toISOString()
+        }).eq('id', client.id);
+        
+        if (error) throw error;
       }
 
       // Оновлюємо контакти

@@ -590,7 +590,7 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
           
           try {
             await saveClient({
-              id: client.id === 'new' ? undefined : client.id,
+              id: editingRow ? editingRow.id : null, // Не передаємо timestamp як ID
               name: client.name,
               contacts: client.contacts
             });
