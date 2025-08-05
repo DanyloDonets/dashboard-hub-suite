@@ -53,10 +53,11 @@ interface DataTableProps {
   saveOrder?: (order: any) => Promise<void>;
   saveInventory?: (item: any) => Promise<void>;
   saveClient?: (client: any) => Promise<void>;
+  saveSubOrder?: (subOrder: any, orderId: string) => Promise<void>;
   deleteRecord?: (id: string, table: string) => Promise<void>;
 }
 
-export function DataTable({ theme, data, onDataChange, materials = [], onMaterialAdd, clients = [], saveOrder, saveInventory, saveClient, deleteRecord }: DataTableProps) {
+export function DataTable({ theme, data, onDataChange, materials = [], onMaterialAdd, clients = [], saveOrder, saveInventory, saveClient, saveSubOrder, deleteRecord }: DataTableProps) {
   const [editingRow, setEditingRow] = useState<DataRow | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
@@ -138,26 +139,30 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
     setEditingRow(null);
   };
 
-  const handleSubOrderSave = (updatedSubOrder: any) => {
-    if (!currentOrderId) return;
+  const handleSubOrderSave = async (subOrderData: any) => {
+    if (!saveSubOrder || !currentOrderId) {
+      logger.log('Помилка', 'Немає функції збереження підзамовлення або ID замовлення', 'Система');
+      return;
+    }
     
-    const newData = data.map(order => {
-      if (order.id === currentOrderId) {
-        const subOrders = order.subOrders || [];
-        if (editingSubOrder) {
-          const updatedSubOrders = subOrders.map(sub => 
-            sub.id === editingSubOrder.id ? updatedSubOrder : sub
-          );
-          return { ...order, subOrders: updatedSubOrders };
-        } else {
-          return { ...order, subOrders: [...subOrders, { ...updatedSubOrder, id: Date.now().toString() }] };
-        }
-      }
-      return order;
-    });
-    
-    onDataChange(newData);
-    logger.log("Підзамовлення", `${editingSubOrder ? 'Оновлено' : 'Створено'} підзамовлення`, "Користувач");
+    try {
+      await saveSubOrder(subOrderData, currentOrderId);
+      setIsSubOrderModalOpen(false);
+      setEditingSubOrder(null);
+      setCurrentOrderId("");
+      toast({
+        title: "Збережено",
+        description: "Підзамовлення успішно збережено"
+      });
+      logger.log("Підзамовлення", `${editingSubOrder ? 'Оновлено' : 'Створено'} підзамовлення "${subOrderData.name}"`, "Користувач");
+    } catch (error) {
+      toast({
+        title: "Помилка",
+        description: "Не вдалося зберегти підзамовлення",
+        variant: "destructive"
+      });
+      logger.log('Помилка', `Помилка збереження підзамовлення: ${error.message}`, 'Система');
+    }
   };
 
   const addSubOrder = (orderId: string) => {

@@ -193,6 +193,64 @@ export const useSupabaseData = () => {
     }
   };
 
+  const saveSubOrder = async (subOrder: any, orderId: string) => {
+    try {
+      // Перевіряємо чи це новий підзапис
+      const isNewSubOrder = !subOrder.id || subOrder.id === 'new' || typeof subOrder.id === 'number' || /^\d+$/.test(subOrder.id);
+      
+      let subOrderId = subOrder.id;
+      
+      if (isNewSubOrder) {
+        const { data: newSubOrder, error } = await (supabase as any).from('sub_orders').insert({
+          order_id: orderId,
+          name: subOrder.name,
+          status: subOrder.status || 'В роботі',
+          notes: subOrder.details?.description || '',
+          delivery_date: subOrder.deliveryDate ? new Date(subOrder.deliveryDate).toISOString() : null
+        }).select().single();
+        
+        if (error) throw error;
+        subOrderId = newSubOrder.id;
+        logger.log('Створення підзамовлення', `Створено підзамовлення "${subOrder.name}" для замовлення ${orderId}`, 'Користувач');
+      } else {
+        const { error } = await (supabase as any).from('sub_orders').update({
+          name: subOrder.name,
+          status: subOrder.status,
+          notes: subOrder.details?.description || '',
+          delivery_date: subOrder.deliveryDate ? new Date(subOrder.deliveryDate).toISOString() : null,
+          updated_at: new Date().toISOString()
+        }).eq('id', subOrder.id);
+        
+        if (error) throw error;
+        logger.log('Оновлення підзамовлення', `Оновлено підзамовлення "${subOrder.name}"`, 'Користувач');
+      }
+
+      // Зберігаємо матеріали підзамовлення
+      if (subOrder.materials && subOrder.materials.length > 0) {
+        // Видаляємо старі матеріали підзамовлення
+        await (supabase as any).from('sub_order_materials').delete().eq('sub_order_id', subOrderId);
+        
+        // Додаємо нові матеріали
+        const materialsToInsert = subOrder.materials.map((material: any) => ({
+          sub_order_id: subOrderId,
+          inventory_id: material.materialId,
+          weight: material.requiredWeight
+        }));
+        
+        const { error: materialsError } = await (supabase as any).from('sub_order_materials').insert(materialsToInsert);
+        if (materialsError) throw materialsError;
+        
+        logger.log('Додавання матеріалів', `Додано ${subOrder.materials.length} матеріалів до підзамовлення "${subOrder.name}"`, 'Користувач');
+      }
+      
+      await loadData();
+    } catch (error) {
+      console.error('Помилка збереження підзамовлення:', error);
+      logger.log('Помилка', `Помилка збереження підзамовлення: ${error.message}`, 'Система');
+      throw error;
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -204,6 +262,7 @@ export const useSupabaseData = () => {
     saveOrder,
     saveInventory,
     saveClient,
+    saveSubOrder,
     deleteRecord
   };
 };

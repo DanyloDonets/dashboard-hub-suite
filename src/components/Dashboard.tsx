@@ -25,7 +25,7 @@ const getMaterialsFromInventory = (inventory: any[]) => {
 
 export function Dashboard({ onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>("orders");
-  const { data, loading, saveOrder, saveInventory, saveClient, deleteRecord } = useSupabaseData();
+  const { data, loading, saveOrder, saveInventory, saveClient, saveSubOrder, deleteRecord } = useSupabaseData();
   const materialsData = getMaterialsFromInventory(data.inventory);
 
   const handleDataChange = (newData: any[]) => {
@@ -110,6 +110,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
             saveOrder={saveOrder}
             saveInventory={saveInventory}
             saveClient={saveClient}
+            saveSubOrder={saveSubOrder}
             deleteRecord={deleteRecord}
           />
         )}
