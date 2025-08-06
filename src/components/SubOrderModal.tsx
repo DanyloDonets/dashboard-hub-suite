@@ -148,7 +148,7 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
 
     // Списуємо кількість матеріалу зі складу
     if (onMaterialAdd) {
-      onMaterialAdd(materialId, weight);
+      onMaterialAdd(materialId, -weight); // Віднімаємо матеріал зі складу
     }
 
     if (!hasEnoughMaterial) {
@@ -159,14 +159,14 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
       });
     }
 
-    // Закриваємо тільки модальне вікно матеріалів
-    setMaterialModalOpen(false);
+    // НЕ закриваємо модальне вікно матеріалів автоматично
+    // setMaterialModalOpen(false);
   };
 
   const removeMaterial = (index: number) => {
     const material = formData.materials?.[index];
     if (material && onMaterialAdd) {
-      // Повертаємо матеріал на склад
+      // Повертаємо матеріал на склад (додаємо позитивне значення)
       onMaterialAdd(material.materialId, material.requiredWeight);
     }
 

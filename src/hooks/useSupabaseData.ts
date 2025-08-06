@@ -207,12 +207,12 @@ export const useSupabaseData = () => {
       const subOrderData = {
         order_id: orderId,
         name: subOrder.name,
-        type: subOrder.type || '',
-        quantity: subOrder.quantity || '',
-        parameters: subOrder.parameters || '',
+        type: subOrder.type || null,
+        quantity: subOrder.quantity || null,
+        parameters: subOrder.parameters || null,
         status: subOrder.status || 'В роботі',
         notes: subOrder.details?.description || '',
-        image_url: subOrder.image || '',
+        image_url: subOrder.image || null,
         delivery_date: subOrder.deliveryDate ? new Date(subOrder.deliveryDate).toISOString() : null
       };
       
@@ -223,10 +223,7 @@ export const useSupabaseData = () => {
         subOrderId = newSubOrder.id;
         logger.log('Створення підзамовлення', `Створено підзамовлення "${subOrder.name}" для замовлення ${orderId}`, 'Користувач');
       } else {
-        const { error } = await (supabase as any).from('sub_orders').update({
-          ...subOrderData,
-          updated_at: new Date().toISOString()
-        }).eq('id', subOrder.id);
+        const { error } = await (supabase as any).from('sub_orders').update(subOrderData).eq('id', subOrder.id);
         
         if (error) throw error;
         logger.log('Оновлення підзамовлення', `Оновлено підзамовлення "${subOrder.name}"`, 'Користувач');
