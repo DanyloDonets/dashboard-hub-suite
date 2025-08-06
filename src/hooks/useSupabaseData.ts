@@ -15,21 +15,25 @@ export const useSupabaseData = () => {
       setLoading(true);
       
       // Використовуємо any для запитів поки типи не оновляться
-      const [ordersResult, inventoryResult, clientsResult, contactsResult] = await Promise.all([
+      const [ordersResult, inventoryResult, clientsResult, contactsResult, subOrdersResult, subOrderMaterialsResult] = await Promise.all([
         (supabase as any).from('orders').select('*'),
         (supabase as any).from('inventory').select('*'),
         (supabase as any).from('clients').select('*'),
-        (supabase as any).from('client_contacts').select('*')
+        (supabase as any).from('client_contacts').select('*'),
+        (supabase as any).from('sub_orders').select('*'),
+        (supabase as any).from('sub_order_materials').select('*')
       ]);
 
       if (ordersResult.error) throw ordersResult.error;
       if (inventoryResult.error) throw inventoryResult.error;
       if (clientsResult.error) throw clientsResult.error;
       if (contactsResult.error) throw contactsResult.error;
+      if (subOrdersResult.error) throw subOrdersResult.error;
+      if (subOrderMaterialsResult.error) throw subOrderMaterialsResult.error;
 
       // Трансформуємо дані для відображення
       const transformedData = {
-        orders: transformOrders(ordersResult.data || []),
+        orders: transformOrders(ordersResult.data || [], subOrdersResult.data || [], subOrderMaterialsResult.data || [], inventoryResult.data || []),
         inventory: transformInventory(inventoryResult.data || []),
         clients: transformClients(clientsResult.data || [], contactsResult.data || [])
       };
@@ -268,23 +272,55 @@ export const useSupabaseData = () => {
 };
 
 // Функції трансформації даних
-const transformOrders = (orders: any[]) => {
-  return orders.map(order => ({
-    id: order.id,
-    name: order.name,
-    status: order.status,
-    date: new Date(order.created_at).toLocaleDateString('uk-UA'),
-    amount: order.total_weight ? `${order.total_weight} кг` : '0 кг',
-    client: "Не вказано",
-    orderDate: new Date(order.created_at).toLocaleDateString('uk-UA'),
-    deliveryDate: order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('uk-UA') : undefined,
-    subOrders: [],
-    details: {
-      description: order.notes || '',
-      priority: order.priority,
-      assignee: "Не вказано"
-    }
-  }));
+const transformOrders = (orders: any[], subOrders: any[], subOrderMaterials: any[], inventory: any[]) => {
+  return orders.map(order => {
+    // Знаходимо підзамовлення для цього замовлення
+    const orderSubOrders = subOrders
+      .filter(subOrder => subOrder.order_id === order.id)
+      .map(subOrder => {
+        // Знаходимо матеріали для цього підзамовлення
+        const subOrderMaterialsData = subOrderMaterials
+          .filter(sm => sm.sub_order_id === subOrder.id)
+          .map(sm => {
+            const material = inventory.find(inv => inv.id === sm.inventory_id);
+            return {
+              materialId: sm.inventory_id,
+              materialName: material ? material.name : 'Невідомий матеріал',
+              requiredWeight: sm.weight
+            };
+          });
+
+        return {
+          id: subOrder.id,
+          name: subOrder.name,
+          status: subOrder.status,
+          type: '',
+          quantity: '',
+          parameters: '',
+          description: subOrder.notes || '',
+          deliveryDate: subOrder.delivery_date ? new Date(subOrder.delivery_date).toLocaleDateString('uk-UA') : undefined,
+          materials: subOrderMaterialsData,
+          image: null
+        };
+      });
+
+    return {
+      id: order.id,
+      name: order.name,
+      status: order.status,
+      date: new Date(order.created_at).toLocaleDateString('uk-UA'),
+      amount: order.total_weight ? `${order.total_weight} кг` : '0 кг',
+      client: "Не вказано",
+      orderDate: new Date(order.created_at).toLocaleDateString('uk-UA'),
+      deliveryDate: order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('uk-UA') : undefined,
+      subOrders: orderSubOrders,
+      details: {
+        description: order.notes || '',
+        priority: order.priority,
+        assignee: "Не вказано"
+      }
+    };
+  });
 };
 
 const transformInventory = (inventory: any[]) => {
