@@ -204,24 +204,27 @@ export const useSupabaseData = () => {
       
       let subOrderId = subOrder.id;
       
+      const subOrderData = {
+        order_id: orderId,
+        name: subOrder.name,
+        type: subOrder.type || '',
+        quantity: subOrder.quantity || '',
+        parameters: subOrder.parameters || '',
+        status: subOrder.status || 'В роботі',
+        notes: subOrder.details?.description || '',
+        image_url: subOrder.image || '',
+        delivery_date: subOrder.deliveryDate ? new Date(subOrder.deliveryDate).toISOString() : null
+      };
+      
       if (isNewSubOrder) {
-        const { data: newSubOrder, error } = await (supabase as any).from('sub_orders').insert({
-          order_id: orderId,
-          name: subOrder.name,
-          status: subOrder.status || 'В роботі',
-          notes: subOrder.details?.description || '',
-          delivery_date: subOrder.deliveryDate ? new Date(subOrder.deliveryDate).toISOString() : null
-        }).select().single();
+        const { data: newSubOrder, error } = await (supabase as any).from('sub_orders').insert(subOrderData).select().single();
         
         if (error) throw error;
         subOrderId = newSubOrder.id;
         logger.log('Створення підзамовлення', `Створено підзамовлення "${subOrder.name}" для замовлення ${orderId}`, 'Користувач');
       } else {
         const { error } = await (supabase as any).from('sub_orders').update({
-          name: subOrder.name,
-          status: subOrder.status,
-          notes: subOrder.details?.description || '',
-          delivery_date: subOrder.deliveryDate ? new Date(subOrder.deliveryDate).toISOString() : null,
+          ...subOrderData,
           updated_at: new Date().toISOString()
         }).eq('id', subOrder.id);
         
@@ -294,13 +297,13 @@ const transformOrders = (orders: any[], subOrders: any[], subOrderMaterials: any
           id: subOrder.id,
           name: subOrder.name,
           status: subOrder.status,
-          type: '',
-          quantity: '',
-          parameters: '',
+          type: subOrder.type || '',
+          quantity: subOrder.quantity || '',
+          parameters: subOrder.parameters || '',
           description: subOrder.notes || '',
           deliveryDate: subOrder.delivery_date ? new Date(subOrder.delivery_date).toLocaleDateString('uk-UA') : undefined,
           materials: subOrderMaterialsData,
-          image: null
+          image: subOrder.image_url || null
         };
       });
 

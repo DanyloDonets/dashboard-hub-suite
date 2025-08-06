@@ -148,7 +148,7 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
 
     // Списуємо кількість матеріалу зі складу
     if (onMaterialAdd) {
-      onMaterialAdd(materialId, -weight);
+      onMaterialAdd(materialId, weight);
     }
 
     if (!hasEnoughMaterial) {
@@ -159,6 +159,7 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
       });
     }
 
+    // Закриваємо тільки модальне вікно матеріалів
     setMaterialModalOpen(false);
   };
 

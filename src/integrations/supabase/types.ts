@@ -198,30 +198,42 @@ export type Database = {
           created_at: string
           delivery_date: string | null
           id: string
+          image_url: string | null
           name: string
           notes: string | null
           order_id: string
+          parameters: string | null
+          quantity: string | null
           status: string
+          type: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           delivery_date?: string | null
           id?: string
+          image_url?: string | null
           name: string
           notes?: string | null
           order_id: string
+          parameters?: string | null
+          quantity?: string | null
           status?: string
+          type?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           delivery_date?: string | null
           id?: string
+          image_url?: string | null
           name?: string
           notes?: string | null
           order_id?: string
+          parameters?: string | null
+          quantity?: string | null
           status?: string
+          type?: string | null
           updated_at?: string
         }
         Relationships: [
