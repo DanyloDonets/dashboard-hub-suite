@@ -55,9 +55,10 @@ interface DataTableProps {
   saveClient?: (client: any) => Promise<void>;
   saveSubOrder?: (subOrder: any, orderId: string) => Promise<void>;
   deleteRecord?: (id: string, table: string) => Promise<void>;
+  deleteSubOrder?: (subOrderId: string, returnMaterials?: boolean) => Promise<void>;
 }
 
-export function DataTable({ theme, data, onDataChange, materials = [], onMaterialAdd, clients = [], saveOrder, saveInventory, saveClient, saveSubOrder, deleteRecord }: DataTableProps) {
+export function DataTable({ theme, data, onDataChange, materials = [], onMaterialAdd, clients = [], saveOrder, saveInventory, saveClient, saveSubOrder, deleteRecord, deleteSubOrder }: DataTableProps) {
   const [editingRow, setEditingRow] = useState<DataRow | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
@@ -281,18 +282,45 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
                       {subOrder.status}
                     </span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSubOrderEdit(subOrder);
-                    }}
-                    className="gap-1"
-                  >
-                    <Edit className="w-3 h-3" />
-                    Редагувати
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSubOrderEdit(subOrder);
+                      }}
+                      className="gap-1"
+                    >
+                      <Edit className="w-3 h-3" />
+                      Редагувати
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (deleteSubOrder && window.confirm('Видалити це підзамовлення?')) {
+                          try {
+                            await deleteSubOrder(subOrder.id, subOrder.status !== 'Завершено');
+                            toast({
+                              title: "Видалено",
+                              description: "Підзамовлення видалено"
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Помилка",
+                              description: "Не вдалося видалити підзамовлення",
+                              variant: "destructive"
+                            });
+                          }
+                        }
+                      }}
+                      className="gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
                 
                 {expandedSubOrder === subOrder.id && (

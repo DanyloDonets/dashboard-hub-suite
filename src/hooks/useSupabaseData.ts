@@ -197,6 +197,45 @@ export const useSupabaseData = () => {
     }
   };
 
+  const deleteSubOrder = async (subOrderId: string, returnMaterials = true) => {
+    try {
+      // Якщо потрібно повернути матеріали, спочатку отримуємо їх список
+      if (returnMaterials) {
+        const { data: materials } = await (supabase as any)
+          .from('sub_order_materials')
+          .select('inventory_id, weight')
+          .eq('sub_order_id', subOrderId);
+        
+        if (materials && materials.length > 0) {
+          // Повертаємо матеріали на склад
+          for (const material of materials) {
+            await (supabase as any)
+              .from('inventory')
+              .update({ 
+                weight: (supabase as any).sql`weight + ${material.weight}`,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', material.inventory_id);
+          }
+        }
+      }
+
+      // Видаляємо матеріали підзамовлення
+      await (supabase as any).from('sub_order_materials').delete().eq('sub_order_id', subOrderId);
+      
+      // Видаляємо підзамовлення
+      const { error } = await (supabase as any).from('sub_orders').delete().eq('id', subOrderId);
+      if (error) throw error;
+      
+      logger.log('Видалення підзамовлення', `Видалено підзамовлення ${subOrderId}`, 'Користувач');
+      await loadData();
+    } catch (error) {
+      console.error('Помилка видалення підзамовлення:', error);
+      logger.log('Помилка', `Помилка видалення підзамовлення: ${error.message}`, 'Система');
+      throw error;
+    }
+  };
+
   const saveSubOrder = async (subOrder: any, orderId: string) => {
     try {
       // Перевіряємо чи це новий підзапис
@@ -267,7 +306,8 @@ export const useSupabaseData = () => {
     saveInventory,
     saveClient,
     saveSubOrder,
-    deleteRecord
+    deleteRecord,
+    deleteSubOrder
   };
 };
 

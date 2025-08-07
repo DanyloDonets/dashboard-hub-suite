@@ -60,19 +60,24 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
     }
   });
 
+  const [originalMaterials, setOriginalMaterials] = useState<Array<{materialId: string; materialName: string; requiredWeight: number;}>>([]);
+  const [materialChanges, setMaterialChanges] = useState<{[key: string]: number}>({});
+
   // Підтягуємо дані при відкритті модального вікна
   useEffect(() => {
     if (isOpen) {
       if (row) {
+        const rowMaterials = row.materials || [];
         setFormData({
           ...row,
-          materials: row.materials || [],
+          materials: rowMaterials,
           details: {
             description: row.details?.description || "",
             priority: row.details?.priority || "Середній",
             assignee: row.details?.assignee || ""
           }
         });
+        setOriginalMaterials([...rowMaterials]);
       } else {
         setFormData({
           id: Date.now().toString(),
@@ -91,7 +96,9 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
             assignee: ""
           }
         });
+        setOriginalMaterials([]);
       }
+      setMaterialChanges({});
     }
   }, [isOpen, row]);
   const [materialModalOpen, setMaterialModalOpen] = useState(false);
@@ -133,8 +140,6 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
     const material = materials.find(m => m.id === materialId);
     if (!material) return;
 
-    const hasEnoughMaterial = material.weight >= weight;
-    
     const newMaterial = {
       materialId,
       materialName: material.name,
@@ -146,18 +151,11 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
       materials: [...(prev.materials || []), newMaterial]
     }));
 
-    // Списуємо кількість матеріалу зі складу
-    if (onMaterialAdd) {
-      onMaterialAdd(materialId, -weight); // Віднімаємо матеріал зі складу
-    }
-
-    if (!hasEnoughMaterial) {
-      toast({
-        title: "Попередження",
-        description: `Недостатньо матеріалу! На складі було: ${material.weight} кг, потрібно: ${weight} кг. Замовлення створено, але потребує поповнення складу.`,
-        variant: "destructive"
-      });
-    }
+    // Тільки оновлюємо локальний стан змін матеріалів
+    setMaterialChanges(prev => ({
+      ...prev,
+      [materialId]: (prev[materialId] || 0) - weight
+    }));
 
     // НЕ закриваємо модальне вікно матеріалів автоматично
     // setMaterialModalOpen(false);
@@ -165,9 +163,12 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
 
   const removeMaterial = (index: number) => {
     const material = formData.materials?.[index];
-    if (material && onMaterialAdd) {
-      // Повертаємо матеріал на склад (додаємо позитивне значення)
-      onMaterialAdd(material.materialId, material.requiredWeight);
+    if (material) {
+      // Тільки оновлюємо локальний стан змін матеріалів
+      setMaterialChanges(prev => ({
+        ...prev,
+        [material.materialId]: (prev[material.materialId] || 0) + material.requiredWeight
+      }));
     }
 
     setFormData(prev => ({
@@ -184,6 +185,15 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
         variant: "destructive"
       });
       return;
+    }
+
+    // Тепер застосовуємо зміни матеріалів до складу
+    if (onMaterialAdd) {
+      Object.entries(materialChanges).forEach(([materialId, change]) => {
+        if (change !== 0) {
+          onMaterialAdd(materialId, change);
+        }
+      });
     }
 
     onSave(formData);
