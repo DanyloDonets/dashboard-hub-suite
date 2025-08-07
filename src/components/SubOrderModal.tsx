@@ -177,6 +177,28 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
     }));
   };
 
+  const updateMaterialWeight = (index: number, newWeight: number) => {
+    const material = formData.materials?.[index];
+    if (!material || newWeight <= 0) return;
+
+    const oldWeight = material.requiredWeight;
+    const weightDifference = oldWeight - newWeight;
+
+    // Оновлюємо зміни матеріалів
+    setMaterialChanges(prev => ({
+      ...prev,
+      [material.materialId]: (prev[material.materialId] || 0) + weightDifference
+    }));
+
+    // Оновлюємо матеріал у формі
+    setFormData(prev => ({
+      ...prev,
+      materials: prev.materials?.map((mat, i) => 
+        i === index ? { ...mat, requiredWeight: newWeight } : mat
+      ) || []
+    }));
+  };
+
   const handleSave = () => {
     if (!formData.name.trim()) {
       toast({
@@ -324,14 +346,22 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
               </div>
               
               {formData.materials && formData.materials.length > 0 && (
-                <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-2">
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
                   {formData.materials.map((material, index) => (
                     <div key={index} className="flex items-center justify-between p-2 border rounded bg-muted/50">
-                      <div>
+                      <div className="flex-1">
                         <span className="font-medium">{material.materialName}</span>
-                        <span className="text-sm text-muted-foreground ml-2">
-                          {material.requiredWeight} кг
-                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="number"
+                            value={material.requiredWeight}
+                            onChange={(e) => updateMaterialWeight(index, parseFloat(e.target.value) || 0)}
+                            className="w-20 h-7 text-sm"
+                            min="0.1"
+                            step="0.1"
+                          />
+                          <span className="text-sm text-muted-foreground">кг</span>
+                        </div>
                       </div>
                       <Button
                         type="button"
