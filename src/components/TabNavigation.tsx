@@ -27,8 +27,8 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
               className={`
                 h-10 sm:h-12 px-3 sm:px-6 rounded-b-none border-b-2 transition-all duration-300 whitespace-nowrap text-sm sm:text-base flex-shrink-0
                 ${activeTab === tab.id 
-                  ? `bg-${tab.theme} text-${tab.theme}-foreground border-${tab.theme} shadow-${tab.theme}` 
-                  : `border-transparent hover:bg-${tab.theme}-muted hover:border-${tab.theme}-accent`
+                  ? `bg-${tab.theme} text-${tab.theme}-foreground border-${tab.theme} shadow-${tab.theme} bg-gradient-${tab.theme}` 
+                  : `border-transparent hover:bg-${tab.theme}/10 hover:border-${tab.theme}/30 hover:text-${tab.theme}`
                 }
               `}
             >

@@ -196,7 +196,13 @@ export function SubOrderModal({ isOpen, onClose, row, onSave, theme, materials =
       });
     }
 
-    onSave(formData);
+    // Зберігаємо підзамовлення з усіма матеріалами
+    const dataToSave = {
+      ...formData,
+      materials: formData.materials || []
+    };
+
+    onSave(dataToSave);
     onClose();
     toast({
       title: "Збережено",
