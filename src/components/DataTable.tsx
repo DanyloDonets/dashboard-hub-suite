@@ -128,17 +128,44 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
     }
   };
 
-  const handleSave = (updatedRow: DataRow) => {
-    if (editingRow) {
-      const newData = data.map(row => row.id === editingRow.id ? updatedRow : row);
-      onDataChange(newData);
-      logger.log("Оновлення", `Оновлено запис ${updatedRow.id}`, "Користувач");
-    } else {
-      const newData = [...data, { ...updatedRow, id: Date.now().toString() }];
-      onDataChange(newData);
-      logger.log("Створення", `Створено новий запис ${updatedRow.id}`, "Користувач");
+  const handleSave = async (updatedRow: DataRow) => {
+    try {
+      if (theme === "orders" && saveOrder) {
+        await saveOrder({
+          id: editingRow ? editingRow.id : null,
+          name: updatedRow.name,
+          status: updatedRow.status,
+          priority: updatedRow.details?.priority || "Середній",
+          notes: updatedRow.details?.description,
+          deliveryDate: updatedRow.date
+        });
+        setIsModalOpen(false);
+        setEditingRow(null);
+        toast({
+          title: "Збережено",
+          description: "Замовлення успішно збережено"
+        });
+        logger.log(editingRow ? "Оновлення" : "Створення", `${editingRow ? 'Оновлено' : 'Створено'} замовлення "${updatedRow.name}"`, "Користувач");
+      } else {
+        // Для інших типів (inventory, clients) використовуємо старий підхід
+        if (editingRow) {
+          const newData = data.map(row => row.id === editingRow.id ? updatedRow : row);
+          onDataChange(newData);
+          logger.log("Оновлення", `Оновлено запис ${updatedRow.id}`, "Користувач");
+        } else {
+          const newData = [...data, { ...updatedRow, id: Date.now().toString() }];
+          onDataChange(newData);
+          logger.log("Створення", `Створено новий запис ${updatedRow.id}`, "Користувач");
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Помилка",
+        description: "Не вдалося зберегти зміни",
+        variant: "destructive"
+      });
+      console.error('Помилка збереження:', error);
     }
-    setEditingRow(null);
   };
 
   const handleSubOrderSave = async (subOrderData: any) => {
