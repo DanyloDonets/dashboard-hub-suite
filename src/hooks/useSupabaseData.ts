@@ -209,13 +209,23 @@ export const useSupabaseData = () => {
         if (materials && materials.length > 0) {
           // Повертаємо матеріали на склад
           for (const material of materials) {
-            await (supabase as any)
+            // Отримуємо поточну вагу матеріалу
+            const { data: currentInventory } = await (supabase as any)
               .from('inventory')
-              .update({ 
-                weight: (supabase as any).sql`weight + ${material.weight}`,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', material.inventory_id);
+              .select('weight')
+              .eq('id', material.inventory_id)
+              .single();
+            
+            if (currentInventory) {
+              // Оновлюємо вагу, додаючи повернений матеріал
+              await (supabase as any)
+                .from('inventory')
+                .update({ 
+                  weight: currentInventory.weight + material.weight,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', material.inventory_id);
+            }
           }
         }
       }
@@ -271,13 +281,23 @@ export const useSupabaseData = () => {
         // Повертаємо старі матеріали на склад
         if (oldMaterials && oldMaterials.length > 0) {
           for (const material of oldMaterials) {
-            await (supabase as any)
+            // Отримуємо поточну вагу матеріалу
+            const { data: currentInventory } = await (supabase as any)
               .from('inventory')
-              .update({ 
-                weight: (supabase as any).sql`weight + ${material.weight}`,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', material.inventory_id);
+              .select('weight')
+              .eq('id', material.inventory_id)
+              .single();
+            
+            if (currentInventory) {
+              // Оновлюємо вагу, додаючи повернений матеріал
+              await (supabase as any)
+                .from('inventory')
+                .update({ 
+                  weight: currentInventory.weight + material.weight,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', material.inventory_id);
+            }
           }
         }
         
