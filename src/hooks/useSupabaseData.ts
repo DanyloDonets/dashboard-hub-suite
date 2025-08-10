@@ -262,7 +262,26 @@ export const useSupabaseData = () => {
         subOrderId = newSubOrder.id;
         logger.log('Створення підзамовлення', `Створено підзамовлення "${subOrder.name}" для замовлення ${orderId}`, 'Користувач');
       } else {
-        // Перед оновленням видаляємо старі матеріали
+        // Перед оновленням отримуємо старі матеріали для повернення на склад
+        const { data: oldMaterials } = await (supabase as any)
+          .from('sub_order_materials')
+          .select('inventory_id, weight')
+          .eq('sub_order_id', subOrder.id);
+        
+        // Повертаємо старі матеріали на склад
+        if (oldMaterials && oldMaterials.length > 0) {
+          for (const material of oldMaterials) {
+            await (supabase as any)
+              .from('inventory')
+              .update({ 
+                weight: (supabase as any).sql`weight + ${material.weight}`,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', material.inventory_id);
+          }
+        }
+        
+        // Видаляємо старі матеріали
         await (supabase as any).from('sub_order_materials').delete().eq('sub_order_id', subOrder.id);
         
         const { error } = await (supabase as any).from('sub_orders').update(subOrderData).eq('id', subOrder.id);

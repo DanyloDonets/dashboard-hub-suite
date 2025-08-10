@@ -99,7 +99,8 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
     logger.log("Відкриття редагування", `Редагування запису ${row.id}`, "Користувач");
   };
 
-  const handleSubOrderEdit = (subOrder: any) => {
+  const handleSubOrderEdit = (subOrder: any, orderId: string) => {
+    setCurrentOrderId(orderId);
     setEditingSubOrder(subOrder);
     setIsSubOrderModalOpen(true);
     logger.log("Відкриття редагування підзамовлення", `Редагування підзамовлення ${subOrder.id}`, "Користувач");
@@ -288,7 +289,7 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
                       variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleSubOrderEdit(subOrder);
+                        handleSubOrderEdit(subOrder, row.id);
                       }}
                       className="gap-1"
                     >
