@@ -129,8 +129,19 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
   };
 
   const handleSave = async (updatedRow: DataRow) => {
+    console.log('handleSave called with theme:', theme, 'editingRow:', editingRow, 'saveOrder available:', !!saveOrder);
+    
     try {
       if (theme === "orders" && saveOrder) {
+        console.log('Saving order with data:', {
+          id: editingRow ? editingRow.id : null,
+          name: updatedRow.name,
+          status: updatedRow.status,
+          priority: updatedRow.details?.priority || "Середній",
+          notes: updatedRow.details?.description,
+          deliveryDate: updatedRow.date
+        });
+        
         await saveOrder({
           id: editingRow ? editingRow.id : null,
           name: updatedRow.name,
@@ -147,6 +158,7 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
         });
         logger.log(editingRow ? "Оновлення" : "Створення", `${editingRow ? 'Оновлено' : 'Створено'} замовлення "${updatedRow.name}"`, "Користувач");
       } else {
+        console.log('Using fallback save method for theme:', theme);
         // Для інших типів (inventory, clients) використовуємо старий підхід
         if (editingRow) {
           const newData = data.map(row => row.id === editingRow.id ? updatedRow : row);
@@ -157,14 +169,16 @@ export function DataTable({ theme, data, onDataChange, materials = [], onMateria
           onDataChange(newData);
           logger.log("Створення", `Створено новий запис ${updatedRow.id}`, "Користувач");
         }
+        setIsModalOpen(false);
+        setEditingRow(null);
       }
     } catch (error) {
+      console.error('Error in handleSave:', error);
       toast({
         title: "Помилка",
         description: "Не вдалося зберегти зміни",
         variant: "destructive"
       });
-      console.error('Помилка збереження:', error);
     }
   };
 
