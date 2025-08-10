@@ -387,10 +387,15 @@ export function EditModal({ isOpen, onClose, row, onSave, theme, isSubOrder = fa
                           className="mb-1"
                         />
                         <Textarea
-                          value={subOrder.details.description}
+                          value={subOrder.details?.description || ""}
                           onChange={(e) => updateSubOrder(index, { 
                             ...subOrder, 
-                            details: { ...subOrder.details, description: e.target.value }
+                            details: { 
+                              ...subOrder.details,
+                              description: e.target.value,
+                              priority: subOrder.details?.priority || "Середній",
+                              assignee: subOrder.details?.assignee || ""
+                            }
                           })}
                           placeholder="Опис підзамовлення"
                           rows={2}
